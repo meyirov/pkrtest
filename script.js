@@ -185,7 +185,8 @@ function startNewPostCheck() {
     setInterval(async () => {
         if (!lastPostTimestamp) return;
         try {
-            const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc&limit=1`, 'GET');
+            const formattedTimestamp = lastPostTimestamp.replace(' ', '+');
+            const newPosts = await supabaseFetch(`posts?timestamp=gt.${encodeURIComponent(formattedTimestamp)}&order=timestamp.desc&limit=1`, 'GET');
             if (newPosts && newPosts.length > 0) {
                 newPostsBtn.style.display = 'block';
             }
@@ -472,6 +473,7 @@ submitTournament.addEventListener('click', async () => {
         desc: document.getElementById('tournament-desc').value,
         address: document.getElementById('tournament-address').value,
         deadline: document.getElementById('tournament-deadline').value,
+        creator_id: userData.telegramUsername,
         timestamp: new Date().toISOString()
     };
     try {
@@ -488,24 +490,25 @@ submitTournament.addEventListener('click', async () => {
 async function loadTournaments() {
     try {
         const tournaments = await supabaseFetch('tournaments?order=timestamp.desc&limit=50', 'GET');
+        console.log('Loaded tournaments:', tournaments); // Логируем данные из Supabase
         tournamentList.innerHTML = '';
         if (tournaments) {
-            for (const tournament of tournaments) {
+            tournaments.forEach(tournament => {
                 const tournamentDiv = document.createElement('div');
                 tournamentDiv.classList.add('tournament');
+                const logoSrc = tournament.logo && tournament.logo.startsWith('http') ? tournament.logo : 'https://picsum.photos/80';
                 tournamentDiv.innerHTML = `
-                    Турнир: ${tournament.name}<br>
-                    Дата: ${tournament.date}<br>
-                    Логотип: ${tournament.logo}<br>
-                    Описание: ${tournament.desc}<br>
-                    Адрес: ${tournament.address}<br>
-                    Дедлайн: ${tournament.deadline}<br>
-                    <button onclick="showRegistrationForm('${tournament.id}')">Зарегистрироваться</button>
-                    <button class="grid-button" onclick="generateTournamentGrid('${tournament.id}')">Сгенерировать сетку</button>
-                    <div id="grid-${tournament.id}" class="tournament-grid" style="display: none;"></div>
+                    <img src="${logoSrc}" alt="Логотип" onerror="this.onerror=null; this.src='https://picsum.photos/80';">
+                    <div class="tournament-info">
+                        <h3>${tournament.name || 'Без названия'}</h3>
+                        <p>${tournament.date || 'Дата не указана'}</p>
+                    </div>
                 `;
+                tournamentDiv.addEventListener('click', () => showTournamentPage(tournament));
                 tournamentList.appendChild(tournamentDiv);
-            }
+            });
+        } else {
+            tournamentList.innerHTML = '<p>Турниры не найдены.</p>';
         }
     } catch (error) {
         console.error('Error loading tournaments:', error);
@@ -513,119 +516,64 @@ async function loadTournaments() {
     }
 }
 
-function showRegistrationForm(tournamentId) {
-    const form = document.createElement('div');
-    form.innerHTML = `
-        <input id="reg-speaker1" type="text" placeholder="Имя и фамилия 1-го спикера">
-        <input id="reg-speaker2" type="text" placeholder="Имя и фамилия 2-го спикера">
-        <input id="reg-club" type="text" placeholder="Клуб">
-        <input id="reg-city" type="text" placeholder="Город">
-        <input id="reg-contacts" type="text" placeholder="Контакты">
-        <textarea id="reg-extra" placeholder="Дополнительно (достижения)"></textarea>
-        <button onclick="submitRegistration('${tournamentId}')">Отправить</button>
+function showTournamentPage(tournament) {
+    console.log('Tournament data:', tournament); // Логируем данные, которые передаются
+
+    const sections = document.querySelectorAll('.content');
+    sections.forEach(section => section.classList.remove('active'));
+    const tournamentPage = document.getElementById('tournament-page');
+    tournamentPage.classList.add('active');
+
+    const header = document.getElementById('tournament-header');
+    // Проверяем все поля и задаем запасные значения
+    const logoSrc = tournament.logo && tournament.logo.startsWith('http') ? tournament.logo : 'https://picsum.photos/100';
+    const name = tournament.name || 'Без названия';
+    const date = tournament.date || 'Дата не указана';
+    const deadline = tournament.deadline || 'Дедлайн не указан';
+    const address = tournament.address || '#';
+    const desc = tournament.desc || 'Описание отсутствует';
+    const tournamentId = tournament.id || 'unknown';
+
+    header.innerHTML = `
+        <img src="${logoSrc}" alt="Логотип" onerror="this.onerror=null; this.src='https://picsum.photos/100';">
+        <h2>${name}</h2>
+        <p>Дата: ${date}</p>
+        <p>Дедлайн: ${deadline}</p>
+        <p><a href="${address}" target="_blank">Адрес</a></p>
+        <p id="desc-${tournamentId}" class="desc-hidden">${desc}</p>
+        <button id="toggle-desc-${tournamentId}" class="grid-button">Показать дальше</button>
     `;
-    tournamentList.appendChild(form);
-}
 
-async function submitRegistration(tournamentId) {
-    const registration = {
-        tournament_id: parseInt(tournamentId),
-        speaker1: document.getElementById('reg-speaker1').value,
-        speaker2: document.getElementById('reg-speaker2').value,
-        club: document.getElementById('reg-club').value,
-        city: document.getElementById('reg-city').value,
-        contacts: document.getElementById('reg-contacts').value,
-        extra: document.getElementById('reg-extra').value,
-        timestamp: new Date().toISOString()
-    };
-    try {
-        await supabaseFetch('registrations', 'POST', registration);
-        alert('Регистрация отправлена!');
-        loadTournaments();
-    } catch (error) {
-        console.error('Error saving registration:', error);
-        alert('Ошибка: ' + error.message);
-    }
-}
-
-async function generateTournamentGrid(tournamentId) {
-    try {
-        const registrations = await supabaseFetch(`registrations?tournament_id=eq.${tournamentId}`, 'GET');
-        if (!registrations || registrations.length < 2) {
-            alert('Недостаточно участников для генерации сетки (нужно минимум 2)!');
-            return;
+    document.getElementById(`toggle-desc-${tournamentId}`).addEventListener('click', () => {
+        const desc = document.getElementById(`desc-${tournamentId}`);
+        if (desc.classList.contains('desc-hidden')) {
+            desc.classList.remove('desc-hidden');
+            document.getElementById(`toggle-desc-${tournamentId}`).textContent = 'Скрыть';
+        } else {
+            desc.classList.add('desc-hidden');
+            document.getElementById(`toggle-desc-${tournamentId}`).textContent = 'Показать дальше';
         }
+    });
 
-        const grid = createSingleEliminationGrid(registrations);
-        renderTournamentGrid(tournamentId, grid);
+    const tabs = document.querySelectorAll('#tournament-tabs .tab-btn');
+    const content = document.getElementById('tournament-content');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    document.getElementById('tournament-posts-btn').classList.add('active');
+    content.innerHTML = '<p>Посты турнира скоро появятся!</p>';
 
-        const gridDiv = document.getElementById(`grid-${tournamentId}`);
-        gridDiv.style.display = 'block';
-    } catch (error) {
-        console.error('Error generating tournament grid:', error);
-        alert('Ошибка генерации сетки: ' + error.message);
-    }
-}
-
-function createSingleEliminationGrid(registrations) {
-    const participants = registrations.map(reg => ({
-        id: reg.id,
-        name: `${reg.speaker1} & ${reg.speaker2} (${reg.club})`
-    }));
-
-    const targetSize = Math.pow(2, Math.ceil(Math.log2(participants.length)));
-    while (participants.length < targetSize) {
-        participants.push({ id: null, name: 'BYE' });
-    }
-
-    for (let i = participants.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [participants[i], participants[j]] = [participants[j], participants[i]];
-    }
-
-    const grid = [];
-    let currentRound = participants;
-    let roundNumber = 1;
-
-    while (currentRound.length > 1) {
-        const matches = [];
-        for (let i = 0; i < currentRound.length; i += 2) {
-            matches.push({
-                player1: currentRound[i],
-                player2: currentRound[i + 1] || { id: null, name: 'BYE' }
-            });
-        }
-        grid.push({ roundNumber, matches });
-        currentRound = matches.map(() => ({ id: null, name: 'TBD' }));
-        roundNumber++;
-    }
-
-    grid.push({ roundNumber, matches: [{ player1: { id: null, name: 'TBD' }, player2: { id: null, name: 'TBD' } }] });
-
-    return grid;
-}
-
-function renderTournamentGrid(tournamentId, grid) {
-    const gridDiv = document.getElementById(`grid-${tournamentId}`);
-    gridDiv.innerHTML = '';
-
-    grid.forEach(round => {
-        const roundDiv = document.createElement('div');
-        roundDiv.classList.add('grid-round');
-        roundDiv.innerHTML = `<h3>Раунд ${round.roundNumber}</h3>`;
-
-        round.matches.forEach(match => {
-            const matchDiv = document.createElement('div');
-            matchDiv.classList.add('grid-match');
-            matchDiv.innerHTML = `
-                <span>${match.player1.name}</span>
-                <span class="vs">vs</span>
-                <span>${match.player2.name}</span>
-            `;
-            roundDiv.appendChild(matchDiv);
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.id === 'tournament-posts-btn') content.innerHTML = '<p>Посты турнира скоро появятся!</p>';
+            if (tab.id === 'tournament-reg-btn') content.innerHTML = '<p>Регистрация скоро появится!</p>';
+            if (tab.id === 'tournament-grid-btn') content.innerHTML = '<p>Сетка скоро появится!</p>';
         });
+    });
 
-        gridDiv.appendChild(roundDiv);
+    document.getElementById('back-to-tournaments').addEventListener('click', () => {
+        tournamentPage.classList.remove('active');
+        document.getElementById('tournaments').classList.add('active');
     });
 }
 
