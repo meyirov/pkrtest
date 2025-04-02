@@ -37,44 +37,7 @@
                 </div>
                 <div id="posts"></div>
             </section>
-            
-<section id="tournaments" class="content">
-    <button id="create-tournament-btn">Создать турнир</button>
-    <div id="create-tournament-form" class="form-hidden">
-        <input id="tournament-name" type="text" placeholder="Название турнира">
-        <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
-        <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
-        <textarea id="tournament-desc" placeholder="Описание турнира (покажется на странице)"></textarea>
-        <button id="submit-tournament">Создать</button>
-    </div>
-    <div id="tournament-list"></div>
-</section>
-
-<section id="tournament-page" class="content" style="display: none;">
-    <div id="tournament-header"></div>
-    <div class="tournament-tabs">
-        <button onclick="showTournamentTab('posts')">Посты</button>
-        <button onclick="showTournamentTab('register')">Регистрация</button>
-        <button id="generate-bracket-btn" style="display:none;" onclick="showTournamentTab('bracket')">Сетка</button>
-    </div>
-    <div id="tournament-tabs-content">
-        <div id="tournament-posts" class="tournament-tab"></div>
-        <div id="tournament-register" class="tournament-tab" style="display:none;">
-            <form id="team-registration-form">
-                <input id="team-name" type="text" placeholder="Название фракции" required>
-                <input id="speaker1" type="text" placeholder="Имя Фамилия первого спикера" required>
-                <input id="speaker2" type="text" placeholder="Имя Фамилия второго спикера" required>
-                <input id="university" type="text" placeholder="Университет и клуб" required>
-                <input id="contacts" type="text" placeholder="Контакты" required>
-                <textarea id="extra" placeholder="Дополнительно (опционально)"></textarea>
-                <button type="submit">Зарегистрироваться</button>
-            </form>
-            <div id="registered-teams"></div>
-        </div>
-        <div id="tournament-bracket" class="tournament-tab" style="display:none;"></div>
-    </div>
-</section>
-
+            <section id="tournaments" class="content">
                 <button id="create-tournament-btn">Создать турнир</button>
                 <div id="create-tournament-form" class="form-hidden">
                     <input id="tournament-name" type="text" placeholder="Название турнира">
