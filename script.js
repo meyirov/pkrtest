@@ -644,18 +644,18 @@ async function loadTournamentPosts() {
 
     if (userData.telegramUsername === currentTournamentOwner) {
         const form = document.createElement('div');
-        form.innerHTML = \`
+        form.innerHTML = `
             <textarea id="tournament-post-text" placeholder="Введите пост..."></textarea>
             <button onclick="submitTournamentPost()">Опубликовать</button>
-        \`;
+        `;
         postsDiv.appendChild(form);
     }
 
-    const posts = await supabaseFetch(\`tournament_posts?tournament_id=eq.\${currentTournamentId}&order=created_at.desc\`, 'GET');
+    const posts = await supabaseFetch(`tournament_posts?tournament_id=eq.\${currentTournamentId}&order=created_at.desc`, 'GET');
     posts.forEach(post => {
         const div = document.createElement('div');
         div.className = 'post';
-        div.innerHTML = \`<strong>\${post.title}</strong><p>\${post.text}</p>\`;
+        div.innerHTML = `<strong>\${post.title}</strong><p>\${post.text}</p>`;
         postsDiv.appendChild(div);
     });
 }
@@ -689,18 +689,18 @@ document.getElementById('team-registration-form').onsubmit = async (e) => {
 
 async function loadRegisteredTeams() {
     const container = document.getElementById('registered-teams');
-    const teams = await supabaseFetch(\`registrations?tournament_id=eq.\${currentTournamentId}\`, 'GET');
-    container.innerHTML = teams.map(t => \`
+    const teams = await supabaseFetch(`registrations?tournament_id=eq.\${currentTournamentId}`, 'GET');
+    container.innerHTML = teams.map(t => `
         <div class="registered-team">
             <strong>\${t.name}</strong> — \${t.speaker1} и \${t.speaker2} [\${t.university}]
         </div>
-    \`).join('');
+    `).join('');
 }
 
 // ========== Генерация сетки ==========
 function showBracketGenerator() {
     const container = document.getElementById('tournament-bracket');
-    container.innerHTML = \`
+    container.innerHTML = `
         <div id="bracket-generator">
             <select id="bracket-format">
                 <option value="APF">АПФ</option>
@@ -710,13 +710,13 @@ function showBracketGenerator() {
             <button onclick="generateBracket()">Создать сетку</button>
         </div>
         <div id="bracket-output"></div>
-    \`;
+    `;
 }
 
 async function generateBracket() {
     const format = document.getElementById('bracket-format').value;
     const rounds = parseInt(document.getElementById('bracket-rounds').value);
-    const teams = await supabaseFetch(\`registrations?tournament_id=eq.\${currentTournamentId}\`, 'GET');
+    const teams = await supabaseFetch(`registrations?tournament_id=eq.\${currentTournamentId}`, 'GET');
     const output = document.getElementById('bracket-output');
     if (!rounds || teams.length % (format === 'BPF' ? 4 : 2) !== 0) {
         return alert('Количество команд не соответствует выбранному формату.');
@@ -728,7 +728,7 @@ async function generateBracket() {
     for (let r = 1; r <= rounds; r++) {
         const roundDiv = document.createElement('div');
         roundDiv.className = 'bracket-round';
-        roundDiv.innerHTML = \`<h3>Раунд \${r}</h3>\`;
+        roundDiv.innerHTML = `<h3>Раунд \${r}</h3>`;
 
         const groupSize = format === 'BPF' ? 4 : 2;
         for (let i = 0; i < shuffled.length; i += groupSize) {
