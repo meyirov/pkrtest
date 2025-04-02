@@ -141,7 +141,7 @@ submitPost.addEventListener('click', async () => {
         postText.value = '';
         postsCache.unshift(newPost[0]);
         sortPostsCache();
-        renderPosts(); // Здесь полное обновление нужно, так как добавляется новый пост
+        renderPosts();
         lastPostTimestamp = postsCache[0].timestamp;
     } catch (error) {
         console.error('Error saving post:', error);
@@ -173,7 +173,7 @@ async function loadNewPosts() {
         if (newPosts && newPosts.length > 0) {
             postsCache.unshift(...newPosts);
             sortPostsCache();
-            renderPosts(); // Здесь тоже полное обновление, так как добавляются новые посты
+            renderPosts();
             lastPostTimestamp = postsCache[0].timestamp;
         }
     } catch (error) {
@@ -192,7 +192,7 @@ function startNewPostCheck() {
         } catch (error) {
             console.error('Error checking for new posts:', error);
         }
-    }, 10000); // Проверяем каждые 10 секунд
+    }, 10000);
 }
 
 function sortPostsCache() {
@@ -373,7 +373,7 @@ async function toggleReaction(postId, type) {
                 timestamp: new Date().toISOString()
             });
         }
-        await updatePost(postId); // Обновляем только этот пост
+        await updatePost(postId);
     } catch (error) {
         console.error('Error toggling reaction:', error);
         alert('Ошибка: ' + error.message);
@@ -441,7 +441,7 @@ async function addComment(postId) {
 
         await supabaseFetch('comments', 'POST', comment);
         commentInput.value = '';
-        await updatePost(postId); // Обновляем только этот пост
+        await updatePost(postId);
     } catch (error) {
         console.error('Error adding comment:', error);
         alert('Ошибка: ' + error.message);
@@ -490,7 +490,7 @@ async function loadTournaments() {
         const tournaments = await supabaseFetch('tournaments?order=timestamp.desc&limit=50', 'GET');
         tournamentList.innerHTML = '';
         if (tournaments) {
-            tournaments.forEach(tournament => {
+            for (const tournament of tournaments) {
                 const tournamentDiv = document.createElement('div');
                 tournamentDiv.classList.add('tournament');
                 tournamentDiv.innerHTML = `
@@ -501,9 +501,11 @@ async function loadTournaments() {
                     Адрес: ${tournament.address}<br>
                     Дедлайн: ${tournament.deadline}<br>
                     <button onclick="showRegistrationForm('${tournament.id}')">Зарегистрироваться</button>
+                    <button class="grid-button" onclick="generateTournamentGrid('${tournament.id}')">Сгенерировать сетку</button>
+                    <div id="grid-${tournament.id}" class="tournament-grid" style="display: none;"></div>
                 `;
                 tournamentList.appendChild(tournamentDiv);
-            });
+            }
         }
     } catch (error) {
         console.error('Error loading tournaments:', error);
@@ -544,6 +546,87 @@ async function submitRegistration(tournamentId) {
         console.error('Error saving registration:', error);
         alert('Ошибка: ' + error.message);
     }
+}
+
+async function generateTournamentGrid(tournamentId) {
+    try {
+        const registrations = await supabaseFetch(`registrations?tournament_id=eq.${tournamentId}`, 'GET');
+        if (!registrations || registrations.length < 2) {
+            alert('Недостаточно участников для генерации сетки (нужно минимум 2)!');
+            return;
+        }
+
+        const grid = createSingleEliminationGrid(registrations);
+        renderTournamentGrid(tournamentId, grid);
+
+        const gridDiv = document.getElementById(`grid-${tournamentId}`);
+        gridDiv.style.display = 'block';
+    } catch (error) {
+        console.error('Error generating tournament grid:', error);
+        alert('Ошибка генерации сетки: ' + error.message);
+    }
+}
+
+function createSingleEliminationGrid(registrations) {
+    const participants = registrations.map(reg => ({
+        id: reg.id,
+        name: `${reg.speaker1} & ${reg.speaker2} (${reg.club})`
+    }));
+
+    const targetSize = Math.pow(2, Math.ceil(Math.log2(participants.length)));
+    while (participants.length < targetSize) {
+        participants.push({ id: null, name: 'BYE' });
+    }
+
+    for (let i = participants.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [participants[i], participants[j]] = [participants[j], participants[i]];
+    }
+
+    const grid = [];
+    let currentRound = participants;
+    let roundNumber = 1;
+
+    while (currentRound.length > 1) {
+        const matches = [];
+        for (let i = 0; i < currentRound.length; i += 2) {
+            matches.push({
+                player1: currentRound[i],
+                player2: currentRound[i + 1] || { id: null, name: 'BYE' }
+            });
+        }
+        grid.push({ roundNumber, matches });
+        currentRound = matches.map(() => ({ id: null, name: 'TBD' }));
+        roundNumber++;
+    }
+
+    grid.push({ roundNumber, matches: [{ player1: { id: null, name: 'TBD' }, player2: { id: null, name: 'TBD' } }] });
+
+    return grid;
+}
+
+function renderTournamentGrid(tournamentId, grid) {
+    const gridDiv = document.getElementById(`grid-${tournamentId}`);
+    gridDiv.innerHTML = '';
+
+    grid.forEach(round => {
+        const roundDiv = document.createElement('div');
+        roundDiv.classList.add('grid-round');
+        roundDiv.innerHTML = `<h3>Раунд ${round.roundNumber}</h3>`;
+
+        round.matches.forEach(match => {
+            const matchDiv = document.createElement('div');
+            matchDiv.classList.add('grid-match');
+            matchDiv.innerHTML = `
+                <span>${match.player1.name}</span>
+                <span class="vs">vs</span>
+                <span>${match.player2.name}</span>
+            `;
+            roundDiv.appendChild(matchDiv);
+        });
+
+        gridDiv.appendChild(roundDiv);
+    });
 }
 
 const ratingList = document.getElementById('rating-list');
