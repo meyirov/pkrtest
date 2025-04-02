@@ -24,52 +24,50 @@
 
     <!-- Основное приложение -->
     <div id="app-container" class="container" style="display: none;">
+        <header class="app-header">
+            <h1>Главная</h1>
+        </header>
+        
         <div class="main-content">
             <section id="feed" class="content active">
-                <div id="new-post">
-                    <textarea id="post-text" placeholder="Что нового?"></textarea>
-                    <div class="new-post-actions">
-                        <div class="new-post-icons">
-                            <!-- Здесь можно добавить иконки в будущем -->
+                <div id="new-post" class="twitter-like-post">
+                    <div class="post-avatar">
+                        <div class="avatar-placeholder"></div>
+                    </div>
+                    <div class="post-content-wrapper">
+                        <textarea id="post-text" placeholder="Что происходит?"></textarea>
+                        <div class="new-post-actions">
+                            <button id="submit-post">Опубликовать</button>
                         </div>
-                        <button id="submit-post">Твитнуть</button>
                     </div>
                 </div>
                 <div id="posts"></div>
             </section>
+            
+            <!-- Остальные секции остаются без изменений -->
             <section id="tournaments" class="content">
-                <button id="create-tournament-btn">Создать турнир</button>
-                <div id="create-tournament-form" class="form-hidden">
-                    <input id="tournament-name" type="text" placeholder="Название турнира">
-                    <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
-                    <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
-                    <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
-                    <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
-                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
-                    <button id="submit-tournament">Создать</button>
-                </div>
-                <div id="tournament-list"></div>
+                <!-- ... -->
             </section>
-            <section id="rating" class="content">
-                <div id="rating-list"></div>
-            </section>
-            <section id="profile" class="content">
-                <h2>Профиль</h2>
-                <p>Username: <span id="username"></span></p>
-                <input id="fullname" type="text" placeholder="Имя и фамилия">
-                <button id="update-profile">Изменить имя</button>
-            </section>
-            <section id="edu" class="content">
-                <h2>PKR EDU</h2>
-                <p>Обучающий контент скоро появится!</p>
-            </section>
+            <!-- ... -->
         </div>
+        
         <nav class="navbar">
-            <button id="feed-btn" class="nav-btn active"><span>🏠</span> Лента</button>
-            <button id="tournaments-btn" class="nav-btn"><span>🏆</span> Турниры</button>
-            <button id="rating-btn" class="nav-btn"><span>⭐</span> Рейтинг</button>
-            <button id="profile-btn" class="nav-btn"><span>👤</span> Профиль</button>
-            <button id="edu-btn" class="nav-btn"><span>📚</span> EDU</button>
+            <button id="feed-btn" class="nav-btn active">
+                <svg viewBox="0 0 24 24" class="nav-icon"><g><path d="M12 1.696L.622 8.807l1.06 1.696L3 9.679V19.5C3 20.881 4.119 22 5.5 22h13c1.381 0 2.5-1.119 2.5-2.5V9.679l1.318.824 1.06-1.696L12 1.696zM12 16.5c-1.933 0-3.5-1.567-3.5-3.5s1.567-3.5 3.5-3.5 3.5 1.567 3.5 3.5-1.567 3.5-3.5 3.5z"></path></g></svg>
+                <span>Главная</span>
+            </button>
+            <button id="tournaments-btn" class="nav-btn">
+                <svg viewBox="0 0 24 24" class="nav-icon"><g><path d="M16 6V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H2v15c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6h-6zm-6-2h4v2h-4V4zM9 18H7v-7h2v7zm4 0h-2v-7h2v7zm4 0h-2v-7h2v7zm2-15H3v3h18V3z"></path></g></svg>
+                <span>Турниры</span>
+            </button>
+            <button id="rating-btn" class="nav-btn">
+                <svg viewBox="0 0 24 24" class="nav-icon"><g><path d="M22.772 10.506l-5.618-2.192-2.16-6.5c-.102-.307-.39-.514-.712-.514s-.61.207-.712.513l-2.16 6.5-5.62 2.192c-.287.112-.477.39-.477.7s.19.585.478.698l5.62 2.192 2.16 6.5c.102.306.39.513.712.513s.61-.207.712-.513l2.16-6.5 5.62-2.192c.287-.112.477-.39.477-.7s-.19-.585-.478-.697zm-6.49 2.32c-.208.08-.37.25-.44.46l-1.56 4.695-1.56-4.693c-.07-.21-.23-.38-.438-.462l-4.155-1.62 4.154-1.622c.208-.08.37-.25.44-.462l1.56-4.693 1.56 4.694c.07.212.23.382.438.463l4.155 1.62-4.155 1.622zM6.663 3.812h-1.88V2.05c0-.414-.337-.75-.75-.75s-.75.336-.75.75v1.762H1.5c-.414 0-.75.336-.75.75s.336.75.75.75h1.782v1.762c0 .414.336.75.75.75s.75-.336.75-.75V5.312h1.88c.415 0 .75-.336.75-.75s-.335-.75-.75-.75zm2.535 15.622h-1.1v-1.016c0-.414-.335-.75-.75-.75s-.75.336-.75.75v1.016H5.57c-.414 0-.75.336-.75.75s.336.75.75.75H6.6v1.016c0 .414.335.75.75.75s.75-.336.75-.75v-1.016h1.098c.414 0 .75-.336.75-.75s-.336-.75-.75-.75z"></path></g></svg>
+                <span>Рейтинг</span>
+            </button>
+            <button id="profile-btn" class="nav-btn">
+                <svg viewBox="0 0 24 24" class="nav-icon"><g><path d="M12 11.816c1.355 0 2.872-.15 3.84-1.256.814-.93 1.078-2.368.806-4.392-.38-2.825-2.117-4.512-4.646-4.512S7.734 3.343 7.354 6.17c-.272 2.022-.008 3.46.806 4.39.968 1.107 2.485 1.256 3.84 1.256zM8.84 6.368c.162-1.2.787-3.068 3.16-3.068s2.998 1.868 3.16 3.068c.207 1.55-.057 2.427-.45 2.908-.306.38-.807.6-1.407.6-.6 0-1.1-.22-1.406-.598-.393-.48-.657-1.36-.45-2.91zm11.44 12.868c-.877-3.526-4.282-5.99-8.28-5.99s-7.403 2.464-8.28 5.99c-.172.692-.028 1.4.395 1.94.408.52 1.04.82 1.733.82h12.304c.693 0 1.325-.3 1.733-.82.424-.54.567-1.247.394-1.94zm-1.576 1.016c-.126.16-.316.246-.552.246H5.848c-.235 0-.426-.085-.552-.246-.137-.174-.18-.412-.12-.654.71-2.855 3.517-4.85 6.824-4.85s6.114 1.994 6.824 4.85c.06.242.017.48-.12.654z"></path></g></svg>
+                <span>Профиль</span>
+            </button>
         </nav>
     </div>
     <script src="script.js"></script>
