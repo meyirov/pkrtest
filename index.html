@@ -4,227 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PKR - Дебаты</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background: #000;
-            color: #e7e9ea;
-            max-width: 600px;
-            margin: 0 auto;
-            border-left: 1px solid #2f3336;
-            border-right: 1px solid #2f3336;
-            min-height: 100vh;
-        }
-
-        /* Шапка */
-        .app-header {
-            padding: 16px;
-            font-size: 20px;
-            font-weight: bold;
-            border-bottom: 1px solid #2f3336;
-            position: sticky;
-            top: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(12px);
-            z-index: 10;
-        }
-
-        /* Поле для нового поста */
-        #new-post {
-            display: flex;
-            padding: 12px 16px;
-            border-bottom: 1px solid #2f3336;
-        }
-        .post-avatar {
-            margin-right: 12px;
-        }
-        .avatar-placeholder {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #333;
-        }
-        .post-content-wrapper {
-            flex: 1;
-        }
-        #post-text {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: #e7e9ea;
-            font-size: 20px;
-            resize: none;
-            min-height: 60px;
-            padding: 8px 0;
-            outline: none;
-        }
-        #submit-post {
-            background: #1d9bf0;
-            color: white;
-            border: none;
-            border-radius: 9999px;
-            padding: 8px 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #submit-post:hover {
-            background: #1a8cd8;
-        }
-
-        /* Стили постов */
-        .post {
-            display: flex;
-            padding: 12px 16px;
-            border-bottom: 1px solid #2f3336;
-        }
-        .post-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .post-user strong {
-            font-weight: bold;
-            margin-right: 4px;
-        }
-        .post-user span {
-            color: #71767b;
-            margin-right: 4px;
-        }
-        .post-time {
-            color: #71767b;
-        }
-        .post-time::before {
-            content: "·";
-            margin: 0 4px;
-        }
-        .post-content {
-            margin: 8px 0;
-            font-size: 15px;
-            line-height: 20px;
-        }
-        .post-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 12px;
-            max-width: 425px;
-        }
-        .reaction-btn {
-            background: none;
-            border: none;
-            color: #71767b;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .reaction-btn:hover {
-            color: #1d9bf0;
-        }
-        .reaction-btn.like-btn.active {
-            color: #f91880;
-        }
-        .reaction-btn.dislike-btn.active {
-            color: #1d9bf0;
-        }
-
-        /* Комментарии */
-        .comment-section {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #2f3336;
-        }
-        .comment {
-            display: flex;
-            padding: 12px 0;
-            border-bottom: 1px solid #2f3336;
-        }
-        .comment-input {
-            width: 100%;
-            background: transparent;
-            border: 1px solid #2f3336;
-            border-radius: 4px;
-            color: #e7e9ea;
-            padding: 8px;
-            margin-top: 8px;
-        }
-
-        /* Навигация */
-        .navbar {
-            display: flex;
-            justify-content: space-around;
-            background: #000;
-            padding: 12px 0;
-            border-top: 1px solid #2f3336;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-        .nav-btn {
-            background: none;
-            border: none;
-            color: #e7e9ea;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            font-size: 12px;
-            gap: 4px;
-        }
-        .nav-btn.active {
-            color: #1d9bf0;
-        }
-
-        /* Модальные окна */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        .modal-content {
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 300px;
-            width: 100%;
-        }
-        .modal-content input {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background: #3a3a3a;
-            color: #e7e9ea;
-        }
-        .modal-content button {
-            padding: 10px 20px;
-            background: #1d9bf0;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        const SUPABASE_URL = 'https://dwkbptqrblyiqymnqjiv.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3a2JwdHFyYmx5aXF5bW5xaml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzA3NTcsImV4cCI6MjA1OTAwNjc1N30.QIHms9_kllO7SMxxUlu2U_ugICz1q_cr2-fO61092N4';
+      const SUPABASE_URL = 'https://dwkbptqrblyiqymnqjiv.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3a2JwdHFyYmx5aXF5bW5xaml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzA3NTcsImV4cCI6MjA1OTAwNjc1N30.QIHms9_kllO7SMxxUlu2U_ugICz1q_cr2-fO61092N4';
     </script>
 </head>
 <body>
@@ -240,26 +24,19 @@
 
     <!-- Основное приложение -->
     <div id="app-container" class="container" style="display: none;">
-        <header class="app-header">
-            <h1>Главная</h1>
-        </header>
-        
         <div class="main-content">
             <section id="feed" class="content active">
-                <div id="new-post" class="twitter-like-post">
-                    <div class="post-avatar">
-                        <div class="avatar-placeholder"></div>
-                    </div>
-                    <div class="post-content-wrapper">
-                        <textarea id="post-text" placeholder="Что происходит?"></textarea>
-                        <div class="new-post-actions">
-                            <button id="submit-post">Опубликовать</button>
+                <div id="new-post">
+                    <textarea id="post-text" placeholder="Что нового?"></textarea>
+                    <div class="new-post-actions">
+                        <div class="new-post-icons">
+                            <!-- Здесь можно добавить иконки в будущем -->
                         </div>
+                        <button id="submit-post">Твитнуть</button>
                     </div>
                 </div>
                 <div id="posts"></div>
             </section>
-            
             <section id="tournaments" class="content">
                 <button id="create-tournament-btn">Создать турнир</button>
                 <div id="create-tournament-form" class="form-hidden">
@@ -273,79 +50,28 @@
                 </div>
                 <div id="tournament-list"></div>
             </section>
-            
             <section id="rating" class="content">
                 <div id="rating-list"></div>
             </section>
-            
             <section id="profile" class="content">
                 <h2>Профиль</h2>
                 <p>Username: <span id="username"></span></p>
                 <input id="fullname" type="text" placeholder="Имя и фамилия">
                 <button id="update-profile">Изменить имя</button>
             </section>
-            
             <section id="edu" class="content">
                 <h2>PKR EDU</h2>
                 <p>Обучающий контент скоро появится!</p>
             </section>
         </div>
-        
         <nav class="navbar">
-            <button id="feed-btn" class="nav-btn active">
-                <svg viewBox="0 0 24 24" width="24" height="24"><g><path d="M12 1.696L.622 8.807l1.06 1.696L3 9.679V19.5C3 20.881 4.119 22 5.5 22h13c1.381 0 2.5-1.119 2.5-2.5V9.679l1.318.824 1.06-1.696L12 1.696zM12 16.5c-1.933 0-3.5-1.567-3.5-3.5s1.567-3.5 3.5-3.5 3.5 1.567 3.5 3.5-1.567 3.5-3.5 3.5z"></path></g></svg>
-                <span>Главная</span>
-            </button>
-            <button id="tournaments-btn" class="nav-btn">
-                <svg viewBox="0 0 24 24" width="24" height="24"><g><path d="M16 6V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H2v15c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6h-6zm-6-2h4v2h-4V4zM9 18H7v-7h2v7zm4 0h-2v-7h2v7zm4 0h-2v-7h2v7zm2-15H3v3h18V3z"></path></g></svg>
-                <span>Турниры</span>
-            </button>
-            <button id="rating-btn" class="nav-btn">
-                <svg viewBox="0 0 24 24" width="24" height="24"><g><path d="M22.772 10.506l-5.618-2.192-2.16-6.5c-.102-.307-.39-.514-.712-.514s-.61.207-.712.513l-2.16 6.5-5.62 2.192c-.287.112-.477.39-.477.7s.19.585.478.698l5.62 2.192 2.16 6.5c.102.306.39.513.712.513s.61-.207.712-.513l2.16-6.5 5.62-2.192c.287-.112.477-.39.477-.7s-.19-.585-.478-.697zm-6.49 2.32c-.208.08-.37.25-.44.46l-1.56 4.695-1.56-4.693c-.07-.21-.23-.38-.438-.462l-4.155-1.62 4.154-1.622c.208-.08.37-.25.44-.462l1.56-4.693 1.56 4.694c.07.212.23.382.438.463l4.155 1.62-4.155 1.622zM6.663 3.812h-1.88V2.05c0-.414-.337-.75-.75-.75s-.75.336-.75.75v1.762H1.5c-.414 0-.75.336-.75.75s.336.75.75.75h1.782v1.762c0 .414.336.75.75.75s.75-.336.75-.75V5.312h1.88c.415 0 .75-.336.75-.75s-.335-.75-.75-.75zm2.535 15.622h-1.1v-1.016c0-.414-.335-.75-.75-.75s-.75.336-.75.75v1.016H5.57c-.414 0-.75.336-.75.75s.336.75.75.75H6.6v1.016c0 .414.335.75.75.75s.75-.336.75-.75v-1.016h1.098c.414 0 .75-.336.75-.75s-.336-.75-.75-.75z"></path></g></svg>
-                <span>Рейтинг</span>
-            </button>
-            <button id="profile-btn" class="nav-btn">
-                <svg viewBox="0 0 24 24" width="24" height="24"><g><path d="M12 11.816c1.355 0 2.872-.15 3.84-1.256.814-.93 1.078-2.368.806-4.392-.38-2.825-2.117-4.512-4.646-4.512S7.734 3.343 7.354 6.17c-.272 2.022-.008 3.46.806 4.39.968 1.107 2.485 1.256 3.84 1.256zM8.84 6.368c.162-1.2.787-3.068 3.16-3.068s2.998 1.868 3.16 3.068c.207 1.55-.057 2.427-.45 2.908-.306.38-.807.6-1.407.6-.6 0-1.1-.22-1.406-.598-.393-.48-.657-1.36-.45-2.91zm11.44 12.868c-.877-3.526-4.282-5.99-8.28-5.99s-7.403 2.464-8.28 5.99c-.172.692-.028 1.4.395 1.94.408.52 1.04.82 1.733.82h12.304c.693 0 1.325-.3 1.733-.82.424-.54.567-1.247.394-1.94zm-1.576 1.016c-.126.16-.316.246-.552.246H5.848c-.235 0-.426-.085-.552-.246-.137-.174-.18-.412-.12-.654.71-2.855 3.517-4.85 6.824-4.85s6.114 1.994 6.824 4.85c.06.242.017.48-.12.654z"></path></g></svg>
-                <span>Профиль</span>
-            </button>
+            <button id="feed-btn" class="nav-btn active"><span>🏠</span> Лента</button>
+            <button id="tournaments-btn" class="nav-btn"><span>🏆</span> Турниры</button>
+            <button id="rating-btn" class="nav-btn"><span>⭐</span> Рейтинг</button>
+            <button id="profile-btn" class="nav-btn"><span>👤</span> Профиль</button>
+            <button id="edu-btn" class="nav-btn"><span>📚</span> EDU</button>
         </nav>
     </div>
-    
-    <script>
-        // Ваш оригинальный JavaScript код остаётся без изменений
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-
-        const registrationModal = document.getElementById('registration-modal');
-        const appContainer = document.getElementById('app-container');
-        const regFullname = document.getElementById('reg-fullname');
-        const submitProfileRegBtn = document.getElementById('submit-profile-reg-btn');
-        let userData = {};
-        let postsCache = [];
-        let lastPostTimestamp = null;
-
-        async function supabaseFetch(endpoint, method, body = null) {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-                method: method,
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': method === 'POST' ? 'return=representation' : undefined
-                },
-                body: body ? JSON.stringify(body) : null
-            });
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Supabase error: ${response.status} - ${errorText}`);
-            }
-            const text = await response.text();
-            return text ? JSON.parse(text) : null;
-        }
-
-        // ... остальной ваш JavaScript код ...
-        
-        checkProfile();
-    </script>
-</body>
+    <script src="script.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a1020b6bf66751',t:'MTc0MzYwNDA1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
