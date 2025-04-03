@@ -185,8 +185,7 @@ function startNewPostCheck() {
     setInterval(async () => {
         if (!lastPostTimestamp) return;
         try {
-            const formattedTimestamp = lastPostTimestamp.replace(' ', '+');
-            const newPosts = await supabaseFetch(`posts?timestamp=gt.${encodeURIComponent(formattedTimestamp)}&order=timestamp.desc&limit=1`, 'GET');
+            const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc&limit=1`, 'GET');
             if (newPosts && newPosts.length > 0) {
                 newPostsBtn.style.display = 'block';
             }
@@ -490,25 +489,21 @@ submitTournament.addEventListener('click', async () => {
 async function loadTournaments() {
     try {
         const tournaments = await supabaseFetch('tournaments?order=timestamp.desc&limit=50', 'GET');
-        console.log('Loaded tournaments:', tournaments); // Логируем данные из Supabase
         tournamentList.innerHTML = '';
         if (tournaments) {
             tournaments.forEach(tournament => {
                 const tournamentDiv = document.createElement('div');
                 tournamentDiv.classList.add('tournament');
-                const logoSrc = tournament.logo && tournament.logo.startsWith('http') ? tournament.logo : 'https://picsum.photos/80';
                 tournamentDiv.innerHTML = `
-                    <img src="${logoSrc}" alt="Логотип" onerror="this.onerror=null; this.src='https://picsum.photos/80';">
+                    <img src="${tournament.logo}" alt="Логотип">
                     <div class="tournament-info">
-                        <h3>${tournament.name || 'Без названия'}</h3>
-                        <p>${tournament.date || 'Дата не указана'}</p>
+                        <h3>${tournament.name}</h3>
+                        <p>${tournament.date}</p>
                     </div>
                 `;
                 tournamentDiv.addEventListener('click', () => showTournamentPage(tournament));
                 tournamentList.appendChild(tournamentDiv);
             });
-        } else {
-            tournamentList.innerHTML = '<p>Турниры не найдены.</p>';
         }
     } catch (error) {
         console.error('Error loading tournaments:', error);
@@ -517,41 +512,30 @@ async function loadTournaments() {
 }
 
 function showTournamentPage(tournament) {
-    console.log('Tournament data:', tournament); // Логируем данные, которые передаются
-
     const sections = document.querySelectorAll('.content');
     sections.forEach(section => section.classList.remove('active'));
     const tournamentPage = document.getElementById('tournament-page');
     tournamentPage.classList.add('active');
 
     const header = document.getElementById('tournament-header');
-    // Проверяем все поля и задаем запасные значения
-    const logoSrc = tournament.logo && tournament.logo.startsWith('http') ? tournament.logo : 'https://picsum.photos/100';
-    const name = tournament.name || 'Без названия';
-    const date = tournament.date || 'Дата не указана';
-    const deadline = tournament.deadline || 'Дедлайн не указан';
-    const address = tournament.address || '#';
-    const desc = tournament.desc || 'Описание отсутствует';
-    const tournamentId = tournament.id || 'unknown';
-
     header.innerHTML = `
-        <img src="${logoSrc}" alt="Логотип" onerror="this.onerror=null; this.src='https://picsum.photos/100';">
-        <h2>${name}</h2>
-        <p>Дата: ${date}</p>
-        <p>Дедлайн: ${deadline}</p>
-        <p><a href="${address}" target="_blank">Адрес</a></p>
-        <p id="desc-${tournamentId}" class="desc-hidden">${desc}</p>
-        <button id="toggle-desc-${tournamentId}" class="grid-button">Показать дальше</button>
+        <img src="${tournament.logo}" alt="Логотип">
+        <h2>${tournament.name}</h2>
+        <p>Дата: ${tournament.date}</p>
+        <p>Дедлайн: ${tournament.deadline}</p>
+        <p><a href="${tournament.address}" target="_blank">Адрес</a></p>
+        <p id="desc-${tournament.id}" class="desc-hidden">${tournament.desc}</p>
+        <button id="toggle-desc-${tournament.id}" class="grid-button">Показать дальше</button>
     `;
 
-    document.getElementById(`toggle-desc-${tournamentId}`).addEventListener('click', () => {
-        const desc = document.getElementById(`desc-${tournamentId}`);
+    document.getElementById(`toggle-desc-${tournament.id}`).addEventListener('click', () => {
+        const desc = document.getElementById(`desc-${tournament.id}`);
         if (desc.classList.contains('desc-hidden')) {
             desc.classList.remove('desc-hidden');
-            document.getElementById(`toggle-desc-${tournamentId}`).textContent = 'Скрыть';
+            document.getElementById(`toggle-desc-${tournament.id}`).textContent = 'Скрыть';
         } else {
             desc.classList.add('desc-hidden');
-            document.getElementById(`toggle-desc-${tournamentId}`).textContent = 'Показать дальше';
+            document.getElementById(`toggle-desc-${tournament.id}`).textContent = 'Показать дальше';
         }
     });
 
