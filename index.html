@@ -38,18 +38,27 @@
                 <div id="posts"></div>
             </section>
             <section id="tournaments" class="content">
-                <button id="create-tournament-btn">Создать турнир</button>
-                <div id="create-tournament-form" class="form-hidden">
-                    <input id="tournament-name" type="text" placeholder="Название турнира">
-                    <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
-                    <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
-                    <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
-                    <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
-                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
-                    <button id="submit-tournament">Создать</button>
-                </div>
-                <div id="tournament-list"></div>
-            </section>
+        <button id="create-tournament-btn">Создать турнир</button>
+    <div id="create-tournament-form" class="form-hidden">
+        <input id="tournament-name" type="text" placeholder="Название турнира">
+        <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
+        <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
+        <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
+        <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
+        <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
+        <!-- Добавим поле для уровня турнира -->
+        <select id="tournament-level">
+            <option value="Городской">Городской</option>
+            <option value="Республиканский">Республиканский</option>
+        </select>
+        <button id="submit-tournament">Создать</button>
+    </div>
+    <div id="tournament-list"></div>
+    <!-- Модальное окно для деталей турнира -->
+    <div id="tournament-modal" class="modal" style="display: none;">
+        <div class="modal-content" id="tournament-modal-content"></div>
+    </div>
+</section>    
             <section id="rating" class="content">
                 <div id="rating-list"></div>
             </section>
