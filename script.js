@@ -141,7 +141,7 @@ submitPost.addEventListener('click', async () => {
         postText.value = '';
         postsCache.unshift(newPost[0]);
         sortPostsCache();
-        renderPosts();
+        renderPosts(); // Здесь полное обновление нужно, так как добавляется новый пост
         lastPostTimestamp = postsCache[0].timestamp;
     } catch (error) {
         console.error('Error saving post:', error);
@@ -173,7 +173,7 @@ async function loadNewPosts() {
         if (newPosts && newPosts.length > 0) {
             postsCache.unshift(...newPosts);
             sortPostsCache();
-            renderPosts();
+            renderPosts(); // Здесь тоже полное обновление, так как добавляются новые посты
             lastPostTimestamp = postsCache[0].timestamp;
         }
     } catch (error) {
@@ -192,7 +192,7 @@ function startNewPostCheck() {
         } catch (error) {
             console.error('Error checking for new posts:', error);
         }
-    }, 10000);
+    }, 10000); // Проверяем каждые 10 секунд
 }
 
 function sortPostsCache() {
@@ -373,7 +373,7 @@ async function toggleReaction(postId, type) {
                 timestamp: new Date().toISOString()
             });
         }
-        await updatePost(postId);
+        await updatePost(postId); // Обновляем только этот пост
     } catch (error) {
         console.error('Error toggling reaction:', error);
         alert('Ошибка: ' + error.message);
@@ -441,7 +441,7 @@ async function addComment(postId) {
 
         await supabaseFetch('comments', 'POST', comment);
         commentInput.value = '';
-        await updatePost(postId);
+        await updatePost(postId); // Обновляем только этот пост
     } catch (error) {
         console.error('Error adding comment:', error);
         alert('Ошибка: ' + error.message);
@@ -472,7 +472,6 @@ submitTournament.addEventListener('click', async () => {
         desc: document.getElementById('tournament-desc').value,
         address: document.getElementById('tournament-address').value,
         deadline: document.getElementById('tournament-deadline').value,
-        creator_id: userData.telegramUsername,
         timestamp: new Date().toISOString()
     };
     try {
@@ -495,13 +494,14 @@ async function loadTournaments() {
                 const tournamentDiv = document.createElement('div');
                 tournamentDiv.classList.add('tournament');
                 tournamentDiv.innerHTML = `
-                    <img src="${tournament.logo}" alt="Логотип">
-                    <div class="tournament-info">
-                        <h3>${tournament.name}</h3>
-                        <p>${tournament.date}</p>
-                    </div>
+                    Турнир: ${tournament.name}<br>
+                    Дата: ${tournament.date}<br>
+                    Логотип: ${tournament.logo}<br>
+                    Описание: ${tournament.desc}<br>
+                    Адрес: ${tournament.address}<br>
+                    Дедлайн: ${tournament.deadline}<br>
+                    <button onclick="showRegistrationForm('${tournament.id}')">Зарегистрироваться</button>
                 `;
-                tournamentDiv.addEventListener('click', () => showTournamentPage(tournament));
                 tournamentList.appendChild(tournamentDiv);
             });
         }
@@ -511,54 +511,39 @@ async function loadTournaments() {
     }
 }
 
-function showTournamentPage(tournament) {
-    const sections = document.querySelectorAll('.content');
-    sections.forEach(section => section.classList.remove('active'));
-    const tournamentPage = document.getElementById('tournament-page');
-    tournamentPage.classList.add('active');
-
-    const header = document.getElementById('tournament-header');
-    header.innerHTML = `
-        <img src="${tournament.logo}" alt="Логотип">
-        <h2>${tournament.name}</h2>
-        <p>Дата: ${tournament.date}</p>
-        <p>Дедлайн: ${tournament.deadline}</p>
-        <p><a href="${tournament.address}" target="_blank">Адрес</a></p>
-        <p id="desc-${tournament.id}" class="desc-hidden">${tournament.desc}</p>
-        <button id="toggle-desc-${tournament.id}" class="grid-button">Показать дальше</button>
+function showRegistrationForm(tournamentId) {
+    const form = document.createElement('div');
+    form.innerHTML = `
+        <input id="reg-speaker1" type="text" placeholder="Имя и фамилия 1-го спикера">
+        <input id="reg-speaker2" type="text" placeholder="Имя и фамилия 2-го спикера">
+        <input id="reg-club" type="text" placeholder="Клуб">
+        <input id="reg-city" type="text" placeholder="Город">
+        <input id="reg-contacts" type="text" placeholder="Контакты">
+        <textarea id="reg-extra" placeholder="Дополнительно (достижения)"></textarea>
+        <button onclick="submitRegistration('${tournamentId}')">Отправить</button>
     `;
+    tournamentList.appendChild(form);
+}
 
-    document.getElementById(`toggle-desc-${tournament.id}`).addEventListener('click', () => {
-        const desc = document.getElementById(`desc-${tournament.id}`);
-        if (desc.classList.contains('desc-hidden')) {
-            desc.classList.remove('desc-hidden');
-            document.getElementById(`toggle-desc-${tournament.id}`).textContent = 'Скрыть';
-        } else {
-            desc.classList.add('desc-hidden');
-            document.getElementById(`toggle-desc-${tournament.id}`).textContent = 'Показать дальше';
-        }
-    });
-
-    const tabs = document.querySelectorAll('#tournament-tabs .tab-btn');
-    const content = document.getElementById('tournament-content');
-    tabs.forEach(tab => tab.classList.remove('active'));
-    document.getElementById('tournament-posts-btn').classList.add('active');
-    content.innerHTML = '<p>Посты турнира скоро появятся!</p>';
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            if (tab.id === 'tournament-posts-btn') content.innerHTML = '<p>Посты турнира скоро появятся!</p>';
-            if (tab.id === 'tournament-reg-btn') content.innerHTML = '<p>Регистрация скоро появится!</p>';
-            if (tab.id === 'tournament-grid-btn') content.innerHTML = '<p>Сетка скоро появится!</p>';
-        });
-    });
-
-    document.getElementById('back-to-tournaments').addEventListener('click', () => {
-        tournamentPage.classList.remove('active');
-        document.getElementById('tournaments').classList.add('active');
-    });
+async function submitRegistration(tournamentId) {
+    const registration = {
+        tournament_id: parseInt(tournamentId),
+        speaker1: document.getElementById('reg-speaker1').value,
+        speaker2: document.getElementById('reg-speaker2').value,
+        club: document.getElementById('reg-club').value,
+        city: document.getElementById('reg-city').value,
+        contacts: document.getElementById('reg-contacts').value,
+        extra: document.getElementById('reg-extra').value,
+        timestamp: new Date().toISOString()
+    };
+    try {
+        await supabaseFetch('registrations', 'POST', registration);
+        alert('Регистрация отправлена!');
+        loadTournaments();
+    } catch (error) {
+        console.error('Error saving registration:', error);
+        alert('Ошибка: ' + error.message);
+    }
 }
 
 const ratingList = document.getElementById('rating-list');
