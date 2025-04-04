@@ -318,7 +318,7 @@ function sortPostsCache() {
 function renderPosts() {
     postsDiv.innerHTML = '';
     for (const post of postsCache) {
-        renderPost(post);
+        renderNewPost(post, false); // Используем renderNewPost вместо renderPost
     }
 }
 
