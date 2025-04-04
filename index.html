@@ -29,36 +29,53 @@
                 <div id="new-post">
                     <textarea id="post-text" placeholder="Что нового?"></textarea>
                     <div class="new-post-actions">
-                        <div class="new-post-icons">
-                            <!-- Здесь можно добавить иконки в будущем -->
-                        </div>
+                        <div class="new-post-icons"></div>
                         <button id="submit-post">Твитнуть</button>
                     </div>
                 </div>
                 <div id="posts"></div>
             </section>
             <section id="tournaments" class="content">
-        <button id="create-tournament-btn">Создать турнир</button>
-    <div id="create-tournament-form" class="form-hidden">
-        <input id="tournament-name" type="text" placeholder="Название турнира">
-        <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
-        <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
-        <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
-        <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
-        <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
-        <!-- Добавим поле для уровня турнира -->
-        <select id="tournament-level">
-            <option value="Городской">Городской</option>
-            <option value="Республиканский">Республиканский</option>
-        </select>
-        <button id="submit-tournament">Создать</button>
-    </div>
-    <div id="tournament-list"></div>
-    <!-- Модальное окно для деталей турнира -->
-    <div id="tournament-modal" class="modal" style="display: none;">
-        <div class="modal-content" id="tournament-modal-content"></div>
-    </div>
-</section>    
+                <button id="create-tournament-btn">Создать турнир</button>
+                <div id="create-tournament-form" class="form-hidden">
+                    <input id="tournament-name" type="text" placeholder="Название турнира">
+                    <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
+                    <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
+                    <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
+                    <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
+                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
+                    <button id="submit-tournament">Создать</button>
+                </div>
+                <div id="tournament-list"></div>
+            </section>
+            <section id="tournament-details" class="content">
+                <div id="tournament-header"></div>
+                <div id="tournament-description" class="description-hidden"></div>
+                <button id="toggle-description-btn">Развернуть описание</button>
+                <hr class="section-divider">
+                <div id="tournament-future-content">
+                    <div class="tournament-tabs">
+                        <button id="posts-tab" class="tab-btn active">Посты</button>
+                        <button id="registration-tab" class="tab-btn">Регистрация</button>
+                        <button id="bracket-tab" class="tab-btn">Сетка</button>
+                    </div>
+                    <div id="tournament-posts" class="tab-content active"></div>
+                    <div id="tournament-registration" class="tab-content">
+                        <button id="register-tournament-btn">Зарегистрироваться</button>
+                        <div id="registration-form" class="form-hidden">
+                            <input id="reg-speaker1" type="text" placeholder="Имя и фамилия 1-го спикера">
+                            <input id="reg-speaker2" type="text" placeholder="Имя и фамилия 2-го спикера">
+                            <input id="reg-club" type="text" placeholder="Клуб">
+                            <input id="reg-city" type="text" placeholder="Город">
+                            <input id="reg-contacts" type="text" placeholder="Контакты">
+                            <textarea id="reg-extra" placeholder="Дополнительно (достижения)"></textarea>
+                            <button id="submit-registration-btn">Отправить</button>
+                        </div>
+                        <div id="registration-list"></div>
+                    </div>
+                    <div id="tournament-bracket" class="tab-content"></div>
+                </div>
+            </section>
             <section id="rating" class="content">
                 <div id="rating-list"></div>
             </section>
@@ -82,5 +99,5 @@
         </nav>
     </div>
     <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a1020b6bf66751',t:'MTc0MzYwNDA1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a8c634fddfaf9e',t:'MTc0MzY4NTQ5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92af469a3dcab077',t:'MTc0Mzc1MzY2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
