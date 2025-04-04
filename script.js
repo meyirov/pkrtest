@@ -832,10 +832,10 @@ async function generateBracket() {
             const match = {
                 teams: matchTeams.map((team, idx) => ({
                     name: team,
-                    position: positions[idx],
-                    room: '',
-                    judge: ''
-                }))
+                    position: positions[idx]
+                })),
+                room: '', // Общее поле для матча
+                judge: '' // Общее поле для матча
             };
             roundMatches.push(match);
         }
@@ -890,18 +890,18 @@ async function loadBracket(tournamentId) {
                     let matchHTML = '';
                     match.teams.forEach(team => {
                         matchHTML += `<p>${team.position}: ${team.name}</p>`;
-                        if (isCreator && !data.published) {
-                            matchHTML += `
-                                <input type="text" placeholder="Кабинет" value="${team.room || ''}" data-round="${round.round}" data-match="${matchIdx}" data-team="${team.name}" class="room-input">
-                                <input type="text" placeholder="Судья" value="${team.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" data-team="${team.name}" class="judge-input">
-                            `;
-                        } else if (data.published) {
-                            matchHTML += `
-                                <p>Кабинет: ${team.room || 'Не указан'}</p>
-                                <p>Судья: ${team.judge || 'Не указан'}</p>
-                            `;
-                        }
                     });
+                    if (isCreator && !data.published) {
+                        matchHTML += `
+                            <input type="text" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
+                            <input type="text" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
+                        `;
+                    } else if (data.published) {
+                        matchHTML += `
+                            <p>Кабинет: ${match.room || 'Не указан'}</p>
+                            <p>Судья: ${match.judge || 'Не указан'}</p>
+                        `;
+                    }
                     matchDiv.innerHTML = matchHTML;
                     roundDiv.appendChild(matchDiv);
                 });
@@ -915,13 +915,10 @@ async function loadBracket(tournamentId) {
                 publishBtn.onclick = async () => {
                     const updatedMatches = data.matches.map(round => ({
                         round: round.round,
-                        matches: round.matches.map(match => ({
-                            teams: match.teams.map(team => ({
-                                name: team.name,
-                                position: team.position,
-                                room: document.querySelector(`.room-input[data-round="${round.round}"][data-match="${matchIdx}"][data-team="${team.name}"]`).value,
-                                judge: document.querySelector(`.judge-input[data-round="${round.round}"][data-match="${matchIdx}"][data-team="${team.name}"]`).value
-                            }))
+                        matches: round.matches.map((match, matchIdx) => ({
+                            teams: match.teams,
+                            room: document.querySelector(`.room-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value,
+                            judge: document.querySelector(`.judge-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value
                         }))
                     }));
                     await supabaseFetch(`brackets?id=eq.${data.id}`, 'PATCH', { matches: updatedMatches, published: true });
