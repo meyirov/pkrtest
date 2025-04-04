@@ -12,6 +12,7 @@ const submitProfileRegBtn = document.getElementById('submit-profile-reg-btn');
 let userData = {};
 let postsCache = [];
 let lastPostTimestamp = null;
+let lastPostId = null; // Добавляем для отслеживания ID последнего поста
 let currentTournamentId = null;
 let isPostsLoaded = false;
 
@@ -152,7 +153,8 @@ submitPost.addEventListener('click', async () => {
     const text = `${userData.fullname} (@${userData.telegramUsername}):\n${postContent}`;
     const post = {
         text: text,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        user_id: userData.telegramUsername // Добавляем user_id для RLS
     };
     try {
         const newPost = await supabaseFetch('posts', 'POST', post);
@@ -161,6 +163,7 @@ submitPost.addEventListener('click', async () => {
         sortPostsCache();
         renderPosts();
         lastPostTimestamp = postsCache[0].timestamp;
+        lastPostId = postsCache[0].id; // Обновляем lastPostId
         isPostsLoaded = true;
     } catch (error) {
         console.error('Error saving post:', error);
@@ -186,6 +189,7 @@ async function loadPosts() {
             renderPosts();
             if (postsCache.length > 0) {
                 lastPostTimestamp = postsCache[0].timestamp;
+                lastPostId = postsCache[0].id; // Сохраняем ID последнего поста
             }
             isPostsLoaded = true;
         }
@@ -202,14 +206,16 @@ async function loadNewPosts() {
     loadingIndicator.style.display = 'block';
 
     try {
-        const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc`, 'GET');
+        // Загружаем новые посты, у которых ID больше, чем lastPostId
+        const newPosts = await supabaseFetch(`posts?id=gt.${lastPostId}&order=timestamp.desc`, 'GET');
         if (newPosts && newPosts.length > 0) {
             const newPostIds = newPosts.map(post => post.id);
-            postsCache = postsCache.filter(post => !newPostIds.includes(post.id));
+            postsCache = postsCache.filter(post => !newPostIds.includes(post.id)); // Удаляем дубликаты
             postsCache.unshift(...newPosts);
             sortPostsCache();
             renderPosts();
             lastPostTimestamp = postsCache[0].timestamp;
+            lastPostId = postsCache[0].id; // Обновляем lastPostId
         }
     } catch (error) {
         console.error('Error loading new posts:', error);
@@ -224,9 +230,15 @@ function subscribeToNewPosts() {
         .channel('posts-channel')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
             const newPost = payload.new;
-            // Проверяем, что пост новее, чем последний в кэше
-            if (lastPostTimestamp && new Date(newPost.timestamp) > new Date(lastPostTimestamp)) {
-                newPostsBtn.style.display = 'block'; // Показываем кнопку "Новые посты"
+            console.log('New post received via Realtime:', newPost);
+
+            // Проверяем, что пост ещё не добавлен в postsCache
+            if (!postsCache.some(post => post.id === newPost.id)) {
+                console.log('New post is unique, showing new posts button');
+                newPostsBtn.style.display = 'block';
+                newPostsBtn.classList.add('visible'); // Добавляем класс для анимации
+            } else {
+                console.log('Post already in cache, skipping');
             }
         })
         .subscribe((status) => {
