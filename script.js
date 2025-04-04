@@ -9,6 +9,7 @@ let userData = {};
 let postsCache = [];
 let lastPostTimestamp = null;
 let currentTournamentId = null;
+let isPostsLoaded = false; // Флаг для кэширования
 
 async function supabaseFetch(endpoint, method, body = null) {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -81,6 +82,15 @@ function showApp() {
 const sections = document.querySelectorAll('.content');
 const buttons = document.querySelectorAll('.nav-btn');
 
+// Функция debounce для ограничения частоты вызовов
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 buttons.forEach(button => {
     button.addEventListener('click', () => {
         buttons.forEach(btn => btn.classList.remove('active'));
@@ -88,10 +98,15 @@ buttons.forEach(button => {
         sections.forEach(section => section.classList.remove('active'));
         const targetSection = document.getElementById(button.id.replace('-btn', ''));
         targetSection.classList.add('active');
-        if (button.id === 'feed-btn') loadPosts();
+        if (button.id === 'feed-btn') {
+            debouncedLoadPosts(); // Используем debounced версию loadPosts
+        }
         if (button.id === 'tournaments-btn') loadTournaments();
     });
 });
+
+// Создаём debounced версию loadPosts
+const debouncedLoadPosts = debounce(loadPosts, 300);
 
 const updateProfileBtn = document.getElementById('update-profile');
 updateProfileBtn.addEventListener('click', async () => {
@@ -144,6 +159,7 @@ submitPost.addEventListener('click', async () => {
         sortPostsCache();
         renderPosts();
         lastPostTimestamp = postsCache[0].timestamp;
+        isPostsLoaded = true; // Обновляем флаг
     } catch (error) {
         console.error('Error saving post:', error);
         alert('Ошибка: ' + error.message);
@@ -151,6 +167,15 @@ submitPost.addEventListener('click', async () => {
 });
 
 async function loadPosts() {
+    // Если посты уже загружены, просто рендерим их
+    if (isPostsLoaded) {
+        renderPosts();
+        return;
+    }
+
+    const loadingIndicator = document.getElementById('posts-loading');
+    loadingIndicator.style.display = 'block';
+
     try {
         postsCache = [];
         const posts = await supabaseFetch('posts?order=timestamp.desc&limit=20', 'GET');
@@ -161,17 +186,25 @@ async function loadPosts() {
             if (postsCache.length > 0) {
                 lastPostTimestamp = postsCache[0].timestamp;
             }
+            isPostsLoaded = true; // Устанавливаем флаг после успешной загрузки
         }
     } catch (error) {
         console.error('Error loading posts:', error);
         alert('Ошибка загрузки постов: ' + error.message);
+    } finally {
+        loadingIndicator.style.display = 'none';
     }
 }
 
 async function loadNewPosts() {
+    const loadingIndicator = document.getElementById('posts-loading');
+    loadingIndicator.style.display = 'block';
+
     try {
         const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc`, 'GET');
         if (newPosts && newPosts.length > 0) {
+            const newPostIds = newPosts.map(post => post.id);
+            postsCache = postsCache.filter(post => !newPostIds.includes(post.id)); // Удаляем дубликаты
             postsCache.unshift(...newPosts);
             sortPostsCache();
             renderPosts();
@@ -179,6 +212,8 @@ async function loadNewPosts() {
         }
     } catch (error) {
         console.error('Error loading new posts:', error);
+    } finally {
+        loadingIndicator.style.display = 'none';
     }
 }
 
@@ -568,7 +603,7 @@ async function showTournamentDetails(tournamentId) {
         initTournamentPosts(isCreator, data.name);
         loadTournamentPosts(tournamentId);
         initRegistration();
-        loadRegistrations(tournamentId);
+        loadRegistrations(tournamentId, isCreator);
         initBracket(isCreator);
         loadBracket(tournamentId);
     } catch (error) {
@@ -691,9 +726,10 @@ function initRegistration() {
         registrationForm.classList.toggle('form-hidden');
     };
 
-    submitRegistrationBtn.onclick = async () => {
+    submitRegistrationBtn.addEventListener('click', async () => {
         const registration = {
             tournament_id: currentTournamentId,
+            faction_name: document.getElementById('reg-faction-name').value,
             speaker1: document.getElementById('reg-speaker1').value,
             speaker2: document.getElementById('reg-speaker2').value,
             club: document.getElementById('reg-club').value,
@@ -703,6 +739,10 @@ function initRegistration() {
             timestamp: new Date().toISOString()
         };
 
+        if (!registration.faction_name) {
+            alert('Пожалуйста, укажите название фракции!');
+            return;
+        }
         if (!registration.club) {
             alert('Пожалуйста, укажите название клуба!');
             return;
@@ -712,6 +752,7 @@ function initRegistration() {
             await supabaseFetch('registrations', 'POST', registration);
             alert('Регистрация отправлена!');
             registrationForm.classList.add('form-hidden');
+            document.getElementById('reg-faction-name').value = '';
             document.getElementById('reg-speaker1').value = '';
             document.getElementById('reg-speaker2').value = '';
             document.getElementById('reg-club').value = '';
@@ -723,10 +764,10 @@ function initRegistration() {
             console.error('Error saving registration:', error);
             alert('Ошибка: ' + error.message);
         }
-    };
+    });
 }
 
-async function loadRegistrations(tournamentId) {
+async function loadRegistrations(tournamentId, isCreator) {
     try {
         const registrations = await supabaseFetch(`registrations?tournament_id=eq.${tournamentId}&order=timestamp.asc`, 'GET');
         const registrationList = document.getElementById('registration-list');
@@ -737,21 +778,50 @@ async function loadRegistrations(tournamentId) {
                 const regCard = document.createElement('div');
                 regCard.classList.add('registration-card');
                 regCard.innerHTML = `
-                    <strong>${reg.club}</strong>
+                    <strong>${reg.faction_name || 'Не указано'}</strong>
+                    <p>Клуб: ${reg.club || 'Не указано'}</p>
                     <p>Спикер 1: ${reg.speaker1 || 'Не указано'}</p>
                     <p>Спикер 2: ${reg.speaker2 || 'Не указано'}</p>
                     <p>Город: ${reg.city || 'Не указано'}</p>
                     <p>Контакты: ${reg.contacts || 'Не указано'}</p>
                     <p>Дополнительно: ${reg.extra || 'Нет'}</p>
+                    ${isCreator ? `<button class="delete-registration-btn" data-registration-id="${reg.id}">Удалить</button>` : ''}
                 `;
                 registrationList.appendChild(regCard);
             });
+
+            // Привязываем обработчики к кнопкам "Удалить"
+            if (isCreator) {
+                const deleteButtons = document.querySelectorAll('.delete-registration-btn');
+                deleteButtons.forEach(button => {
+                    button.onclick = async () => {
+                        const registrationId = button.getAttribute('data-registration-id');
+                        if (confirm('Вы уверены, что хотите удалить эту команду?')) {
+                            await deleteRegistration(registrationId, tournamentId);
+                        }
+                    };
+                });
+            }
         } else {
             registrationList.innerHTML = '<p>Пока нет зарегистрированных команд.</p>';
         }
     } catch (error) {
         console.error('Error loading registrations:', error);
         alert('Ошибка загрузки регистраций: ' + error.message);
+    }
+}
+
+async function deleteRegistration(registrationId, tournamentId) {
+    try {
+        // Удаляем запись из таблицы registrations по id
+        await supabaseFetch(`registrations?id=eq.${registrationId}`, 'DELETE');
+        alert('Команда успешно удалена!');
+        // Перезагружаем список регистраций
+        const isCreator = (await supabaseFetch(`tournaments?id=eq.${tournamentId}`, 'GET'))[0].creator_id === userData.telegramUsername;
+        await loadRegistrations(tournamentId, isCreator);
+    } catch (error) {
+        console.error('Error deleting registration:', error);
+        alert('Ошибка при удалении команды: ' + error.message);
     }
 }
 
@@ -805,7 +875,10 @@ async function generateBracket() {
         return;
     }
 
-    const teams = registrations.slice(0, factionCount).map(reg => reg.club);
+    const teams = registrations.slice(0, factionCount).map(reg => ({
+        faction_name: reg.faction_name,
+        club: reg.club
+    }));
     const positions = format === 'АПФ' ? ['Правительство', 'Оппозиция'] : ['Открывающая Правительство', 'Открывающая Оппозиция', 'Закрывающая Правительство', 'Закрывающая Оппозиция'];
     const teamsPerMatch = format === 'АПФ' ? 2 : 4;
 
@@ -822,7 +895,7 @@ async function generateBracket() {
                 matchTeams.push(availableTeams.splice(randomIndex, 1)[0]);
             }
 
-            const matchKey = matchTeams.sort().join('|');
+            const matchKey = matchTeams.map(team => team.faction_name).sort().join('|');
             if (usedPairs.has(matchKey)) {
                 availableTeams.push(...matchTeams);
                 continue;
@@ -831,11 +904,12 @@ async function generateBracket() {
 
             const match = {
                 teams: matchTeams.map((team, idx) => ({
-                    name: team,
+                    faction_name: team.faction_name,
+                    club: team.club,
                     position: positions[idx]
                 })),
-                room: '', // Общее поле для матча
-                judge: '' // Общее поле для матча
+                room: '',
+                judge: ''
             };
             roundMatches.push(match);
         }
@@ -889,12 +963,14 @@ async function loadBracket(tournamentId) {
                     matchDiv.classList.add('bracket-match');
                     let matchHTML = '';
                     match.teams.forEach(team => {
-                        matchHTML += `<p>${team.position}: ${team.name}</p>`;
+                        matchHTML += `
+                            <p>${team.position}: ${team.faction_name} <span class="team-club">(${team.club})</span></p>
+                        `;
                     });
                     if (isCreator && !data.published) {
                         matchHTML += `
-                            <input type="text" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
-                            <input type="text" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
+                            <input type="text" id="room-input-${round.round}-${matchIdx}" name="room-${round.round}-${matchIdx}" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
+                            <input type="text" id="judge-input-${round.round}-${matchIdx}" name="judge-${round.round}-${matchIdx}" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
                         `;
                     } else if (data.published) {
                         matchHTML += `
