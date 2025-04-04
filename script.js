@@ -11,28 +11,38 @@ const regFullname = document.getElementById('reg-fullname');
 const submitProfileRegBtn = document.getElementById('submit-profile-reg-btn');
 let userData = {};
 let postsCache = [];
-let lastPostTimestamp = null;
-let lastPostId = null; // Добавляем для отслеживания ID последнего поста
+let lastPostId = null; // Для пагинации и отслеживания новых постов
 let currentTournamentId = null;
 let isPostsLoaded = false;
+let isLoadingMore = false; // Флаг для предотвращения множественных загрузок
+let newPostsCount = 0; // Счётчик новых постов для кнопки "Новые посты"
+let channel = null; // Для управления Realtime-подпиской
 
-async function supabaseFetch(endpoint, method, body = null) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-        method: method,
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': method === 'POST' || method === 'PATCH' ? 'return=representation' : undefined
-        },
-        body: body ? JSON.stringify(body) : null
-    });
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Supabase error: ${response.status} - ${errorText}`);
+async function supabaseFetch(endpoint, method, body = null, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+                method: method,
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': method === 'POST' || method === 'PATCH' ? 'return=representation' : undefined
+                },
+                body: body ? JSON.stringify(body) : null
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Supabase error: ${response.status} - ${errorText}`);
+            }
+            const text = await response.text();
+            return text ? JSON.parse(text) : null;
+        } catch (error) {
+            if (attempt === retries) throw error;
+            console.warn(`Retrying request (${attempt}/${retries})...`, error);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Экспоненциальная задержка
+        }
     }
-    const text = await response.text();
-    return text ? JSON.parse(text) : null;
 }
 
 async function checkProfile() {
@@ -81,7 +91,7 @@ function showApp() {
     document.getElementById('username').textContent = userData.telegramUsername;
     document.getElementById('fullname').value = userData.fullname;
     loadPosts();
-    subscribeToNewPosts(); // Подписываемся на новые посты
+    subscribeToNewPosts();
 }
 
 const sections = document.querySelectorAll('.content');
@@ -141,6 +151,7 @@ newPostsBtn.innerHTML = 'Новые посты';
 newPostsBtn.addEventListener('click', () => {
     loadNewPosts();
     newPostsBtn.style.display = 'none';
+    newPostsCount = 0;
 });
 document.getElementById('feed').prepend(newPostsBtn);
 
@@ -154,17 +165,24 @@ submitPost.addEventListener('click', async () => {
     const post = {
         text: text,
         timestamp: new Date().toISOString(),
-        user_id: userData.telegramUsername // Добавляем user_id для RLS
+        user_id: userData.telegramUsername
     };
     try {
         const newPost = await supabaseFetch('posts', 'POST', post);
         postText.value = '';
-        postsCache.unshift(newPost[0]);
-        sortPostsCache();
-        renderPosts();
-        lastPostTimestamp = postsCache[0].timestamp;
-        lastPostId = postsCache[0].id; // Обновляем lastPostId
-        isPostsLoaded = true;
+        // Добавляем пост в кэш только если его там нет
+        if (!postsCache.some(p => p.id === newPost[0].id)) {
+            postsCache.unshift(newPost[0]);
+            sortPostsCache();
+            if (isUserAtTop()) {
+                renderNewPost(newPost[0], true); // Добавляем пост вверху
+            } else {
+                newPostsCount++;
+                newPostsBtn.style.display = 'block';
+                newPostsBtn.classList.add('visible');
+            }
+            lastPostId = postsCache[0].id;
+        }
     } catch (error) {
         console.error('Error saving post:', error);
         alert('Ошибка: ' + error.message);
@@ -182,14 +200,13 @@ async function loadPosts() {
 
     try {
         postsCache = [];
-        const posts = await supabaseFetch('posts?order=timestamp.desc&limit=20', 'GET');
+        const posts = await supabaseFetch('posts?order=id.desc&limit=20', 'GET');
         if (posts) {
             postsCache = posts;
             sortPostsCache();
             renderPosts();
             if (postsCache.length > 0) {
-                lastPostTimestamp = postsCache[0].timestamp;
-                lastPostId = postsCache[0].id; // Сохраняем ID последнего поста
+                lastPostId = postsCache[0].id;
             }
             isPostsLoaded = true;
         }
@@ -199,46 +216,72 @@ async function loadPosts() {
     } finally {
         loadingIndicator.style.display = 'none';
     }
+
+    // Добавляем бесконечную прокрутку
+    setupInfiniteScroll();
 }
 
-async function loadNewPosts() {
-    const loadingIndicator = document.getElementById('posts-loading');
-    loadingIndicator.style.display = 'block';
+async function loadMorePosts() {
+    if (isLoadingMore || postsCache.length === 0) return;
+
+    isLoadingMore = true;
+    const oldestPostId = postsCache[postsCache.length - 1].id;
 
     try {
-        // Загружаем новые посты, у которых ID больше, чем lastPostId
-        const newPosts = await supabaseFetch(`posts?id=gt.${lastPostId}&order=timestamp.desc`, 'GET');
-        if (newPosts && newPosts.length > 0) {
-            const newPostIds = newPosts.map(post => post.id);
-            postsCache = postsCache.filter(post => !newPostIds.includes(post.id)); // Удаляем дубликаты
-            postsCache.unshift(...newPosts);
-            sortPostsCache();
-            renderPosts();
-            lastPostTimestamp = postsCache[0].timestamp;
-            lastPostId = postsCache[0].id; // Обновляем lastPostId
+        const morePosts = await supabaseFetch(`posts?id=lt.${oldestPostId}&order=id.desc&limit=20`, 'GET');
+        if (morePosts && morePosts.length > 0) {
+            const newPosts = morePosts.filter(post => !postsCache.some(p => p.id === post.id));
+            if (newPosts.length > 0) {
+                postsCache.push(...newPosts);
+                sortPostsCache();
+                renderMorePosts(newPosts);
+            }
         }
     } catch (error) {
-        console.error('Error loading new posts:', error);
+        console.error('Error loading more posts:', error);
     } finally {
-        loadingIndicator.style.display = 'none';
+        isLoadingMore = false;
     }
 }
 
-// Подписка на новые посты через Supabase Realtime
+async function loadNewPosts() {
+    try {
+        const newPosts = await supabaseFetch(`posts?id=gt.${lastPostId}&order=id.desc`, 'GET');
+        if (newPosts && newPosts.length > 0) {
+            const uniqueNewPosts = newPosts.filter(post => !postsCache.some(p => p.id === post.id));
+            if (uniqueNewPosts.length > 0) {
+                postsCache.unshift(...uniqueNewPosts);
+                sortPostsCache();
+                renderNewPosts(uniqueNewPosts, true);
+                lastPostId = postsCache[0].id;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading new posts:', error);
+    }
+}
+
 function subscribeToNewPosts() {
-    const channel = supabaseClient
+    // Удаляем старую подписку, если она существует
+    if (channel) {
+        supabaseClient.removeChannel(channel);
+    }
+
+    channel = supabaseClient
         .channel('posts-channel')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
             const newPost = payload.new;
-            console.log('New post received via Realtime:', newPost);
-
-            // Проверяем, что пост ещё не добавлен в postsCache
             if (!postsCache.some(post => post.id === newPost.id)) {
-                console.log('New post is unique, showing new posts button');
-                newPostsBtn.style.display = 'block';
-                newPostsBtn.classList.add('visible'); // Добавляем класс для анимации
-            } else {
-                console.log('Post already in cache, skipping');
+                postsCache.unshift(newPost);
+                sortPostsCache();
+                if (isUserAtTop()) {
+                    renderNewPost(newPost, true);
+                    lastPostId = postsCache[0].id;
+                } else {
+                    newPostsCount++;
+                    newPostsBtn.style.display = 'block';
+                    newPostsBtn.classList.add('visible');
+                }
             }
         })
         .subscribe((status) => {
@@ -250,26 +293,42 @@ function subscribeToNewPosts() {
         });
 }
 
-function sortPostsCache() {
-    postsCache.sort((a, b) => {
-        const timeA = new Date(a.timestamp).getTime();
-        const timeB = new Date(b.timestamp).getTime();
-        if (timeA === timeB) {
-            // Если timestamp одинаковый, сортируем по id (новые посты имеют больший id)
-            return b.id - a.id;
-        }
-        return timeB - timeA;
-    });
+function isUserAtTop() {
+    const feedSection = document.getElementById('feed');
+    return feedSection.scrollTop <= 50; // Пользователь вверху, если прокрутка меньше 50px
 }
 
-async function renderPosts() {
+function setupInfiniteScroll() {
+    const feedSection = document.getElementById('feed');
+    feedSection.removeEventListener('scroll', debouncedLoadMorePosts); // Удаляем старый слушатель
+    feedSection.addEventListener('scroll', debouncedLoadMorePosts);
+}
+
+const debouncedLoadMorePosts = debounce(() => {
+    const feedSection = document.getElementById('feed');
+    if (feedSection.scrollHeight - feedSection.scrollTop <= feedSection.clientHeight + 100) {
+        loadMorePosts();
+    }
+}, 300);
+
+function sortPostsCache() {
+    postsCache.sort((a, b) => b.id - a.id); // Сортировка по id (новые посты вверху)
+}
+
+function renderPosts() {
     postsDiv.innerHTML = '';
     for (const post of postsCache) {
-        await renderPost(post);
+        renderPost(post);
     }
 }
 
-async function renderPost(post) {
+function renderNewPosts(newPosts, prepend = false) {
+    for (const post of newPosts) {
+        renderNewPost(post, prepend);
+    }
+}
+
+function renderNewPost(post, prepend = false) {
     const postDiv = document.createElement('div');
     postDiv.classList.add('post');
     postDiv.setAttribute('data-post-id', post.id);
@@ -281,16 +340,6 @@ async function renderPost(post) {
 
     const timeAgo = getTimeAgo(new Date(post.timestamp));
 
-    const reactions = await loadReactions(post.id);
-    const likes = reactions.filter(r => r.type === 'like').length;
-    const dislikes = reactions.filter(r => r.type === 'dislike').length;
-    const userReaction = reactions.find(r => r.user_id === userData.telegramUsername);
-    const likeClass = userReaction && userReaction.type === 'like' ? 'active' : '';
-    const dislikeClass = userReaction && userReaction.type === 'dislike' ? 'active' : '';
-
-    const comments = await loadComments(post.id);
-    const commentCount = comments ? comments.length : 0;
-
     postDiv.innerHTML = `
         <div class="post-header">
             <div class="post-user">
@@ -301,9 +350,9 @@ async function renderPost(post) {
         </div>
         <div class="post-content">${content}</div>
         <div class="post-actions">
-            <button class="reaction-btn like-btn ${likeClass}" onclick="toggleReaction(${post.id}, 'like')">👍 ${likes}</button>
-            <button class="reaction-btn dislike-btn ${dislikeClass}" onclick="toggleReaction(${post.id}, 'dislike')">👎 ${dislikes}</button>
-            <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (${commentCount})</button>
+            <button class="reaction-btn like-btn" onclick="toggleReaction(${post.id}, 'like')">👍 0</button>
+            <button class="reaction-btn dislike-btn" onclick="toggleReaction(${post.id}, 'dislike')">👎 0</button>
+            <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
         </div>
         <div class="comment-section" id="comments-${post.id}" style="display: none;">
             <div class="comment-list" id="comment-list-${post.id}"></div>
@@ -314,10 +363,88 @@ async function renderPost(post) {
         </div>
     `;
 
-    postsDiv.appendChild(postDiv);
+    if (prepend) {
+        postsDiv.prepend(postDiv);
+    } else {
+        postsDiv.appendChild(postDiv);
+    }
 
-    if (comments) {
-        await renderComments(post.id, comments);
+    // Загружаем реакции и комментарии асинхронно
+    loadReactionsAndComments(post.id);
+}
+
+async function renderMorePosts(newPosts) {
+    for (const post of newPosts) {
+        const postDiv = document.createElement('div');
+        postDiv.classList.add('post');
+        postDiv.setAttribute('data-post-id', post.id);
+
+        const [userInfo, ...contentParts] = post.text.split(':\n');
+        const [fullname, username] = userInfo.split(' (@');
+        const cleanUsername = username ? username.replace(')', '') : '';
+        const content = contentParts.join(':\n');
+
+        const timeAgo = getTimeAgo(new Date(post.timestamp));
+
+        postDiv.innerHTML = `
+            <div class="post-header">
+                <div class="post-user">
+                    <strong>${fullname}</strong>
+                    <span>@${cleanUsername}</span>
+                </div>
+                <div class="post-time">${timeAgo}</div>
+            </div>
+            <div class="post-content">${content}</div>
+            <div class="post-actions">
+                <button class="reaction-btn like-btn" onclick="toggleReaction(${post.id}, 'like')">👍 0</button>
+                <button class="reaction-btn dislike-btn" onclick="toggleReaction(${post.id}, 'dislike')">👎 0</button>
+                <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
+            </div>
+            <div class="comment-section" id="comments-${post.id}" style="display: none;">
+                <div class="comment-list" id="comment-list-${post.id}"></div>
+                <div class="comment-form">
+                    <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий..."></textarea>
+                    <button onclick="addComment(${post.id})">Отправить</button>
+                </div>
+            </div>
+        `;
+
+        postsDiv.appendChild(postDiv);
+
+        // Загружаем реакции и комментарии асинхронно
+        loadReactionsAndComments(post.id);
+    }
+}
+
+async function loadReactionsAndComments(postId) {
+    try {
+        const reactions = await loadReactions(postId);
+        const likes = reactions.filter(r => r.type === 'like').length;
+        const dislikes = reactions.filter(r => r.type === 'dislike').length;
+        const userReaction = reactions.find(r => r.user_id === userData.telegramUsername);
+        const likeClass = userReaction && userReaction.type === 'like' ? 'active' : '';
+        const dislikeClass = userReaction && userReaction.type === 'dislike' ? 'active' : '';
+
+        const comments = await loadComments(postId);
+        const commentCount = comments ? comments.length : 0;
+
+        const postDiv = postsDiv.querySelector(`[data-post-id="${postId}"]`);
+        if (postDiv) {
+            const likeBtn = postDiv.querySelector('.like-btn');
+            const dislikeBtn = postDiv.querySelector('.dislike-btn');
+            const commentBtn = postDiv.querySelector('.comment-toggle-btn');
+            likeBtn.className = `reaction-btn like-btn ${likeClass}`;
+            likeBtn.innerHTML = `👍 ${likes}`;
+            dislikeBtn.className = `reaction-btn dislike-btn ${dislikeClass}`;
+            dislikeBtn.innerHTML = `👎 ${dislikes}`;
+            commentBtn.innerHTML = `💬 Комментарии (${commentCount})`;
+
+            if (comments) {
+                await renderComments(postId, comments);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading reactions and comments:', error);
     }
 }
 
@@ -339,10 +466,6 @@ async function updatePost(postId) {
     const commentCount = comments ? comments.length : 0;
 
     postsCache[postIndex] = post[0];
-    postsCache[postIndex].likes = likes;
-    postsCache[postIndex].dislikes = dislikes;
-    postsCache[postIndex].comment_count = commentCount;
-
     const postDiv = postsDiv.querySelector(`[data-post-id="${postId}"]`);
     if (!postDiv) return;
 
