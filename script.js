@@ -1,3 +1,7 @@
+// Подключаем Supabase клиент
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const tg = window.Telegram.WebApp;
 tg.ready();
 
@@ -9,7 +13,7 @@ let userData = {};
 let postsCache = [];
 let lastPostTimestamp = null;
 let currentTournamentId = null;
-let isPostsLoaded = false; // Флаг для кэширования
+let isPostsLoaded = false;
 
 async function supabaseFetch(endpoint, method, body = null) {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -76,13 +80,12 @@ function showApp() {
     document.getElementById('username').textContent = userData.telegramUsername;
     document.getElementById('fullname').value = userData.fullname;
     loadPosts();
-    startNewPostCheck();
+    subscribeToNewPosts(); // Подписываемся на новые посты
 }
 
 const sections = document.querySelectorAll('.content');
 const buttons = document.querySelectorAll('.nav-btn');
 
-// Функция debounce для ограничения частоты вызовов
 function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -99,13 +102,12 @@ buttons.forEach(button => {
         const targetSection = document.getElementById(button.id.replace('-btn', ''));
         targetSection.classList.add('active');
         if (button.id === 'feed-btn') {
-            debouncedLoadPosts(); // Используем debounced версию loadPosts
+            debouncedLoadPosts();
         }
         if (button.id === 'tournaments-btn') loadTournaments();
     });
 });
 
-// Создаём debounced версию loadPosts
 const debouncedLoadPosts = debounce(loadPosts, 300);
 
 const updateProfileBtn = document.getElementById('update-profile');
@@ -159,7 +161,7 @@ submitPost.addEventListener('click', async () => {
         sortPostsCache();
         renderPosts();
         lastPostTimestamp = postsCache[0].timestamp;
-        isPostsLoaded = true; // Обновляем флаг
+        isPostsLoaded = true;
     } catch (error) {
         console.error('Error saving post:', error);
         alert('Ошибка: ' + error.message);
@@ -167,7 +169,6 @@ submitPost.addEventListener('click', async () => {
 });
 
 async function loadPosts() {
-    // Если посты уже загружены, просто рендерим их
     if (isPostsLoaded) {
         renderPosts();
         return;
@@ -186,7 +187,7 @@ async function loadPosts() {
             if (postsCache.length > 0) {
                 lastPostTimestamp = postsCache[0].timestamp;
             }
-            isPostsLoaded = true; // Устанавливаем флаг после успешной загрузки
+            isPostsLoaded = true;
         }
     } catch (error) {
         console.error('Error loading posts:', error);
@@ -204,7 +205,7 @@ async function loadNewPosts() {
         const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc`, 'GET');
         if (newPosts && newPosts.length > 0) {
             const newPostIds = newPosts.map(post => post.id);
-            postsCache = postsCache.filter(post => !newPostIds.includes(post.id)); // Удаляем дубликаты
+            postsCache = postsCache.filter(post => !newPostIds.includes(post.id));
             postsCache.unshift(...newPosts);
             sortPostsCache();
             renderPosts();
@@ -217,18 +218,24 @@ async function loadNewPosts() {
     }
 }
 
-function startNewPostCheck() {
-    setInterval(async () => {
-        if (!lastPostTimestamp) return;
-        try {
-            const newPosts = await supabaseFetch(`posts?timestamp=gt.${lastPostTimestamp}&order=timestamp.desc&limit=1`, 'GET');
-            if (newPosts && newPosts.length > 0) {
-                newPostsBtn.style.display = 'block';
+// Подписка на новые посты через Supabase Realtime
+function subscribeToNewPosts() {
+    const channel = supabaseClient
+        .channel('posts-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
+            const newPost = payload.new;
+            // Проверяем, что пост новее, чем последний в кэше
+            if (lastPostTimestamp && new Date(newPost.timestamp) > new Date(lastPostTimestamp)) {
+                newPostsBtn.style.display = 'block'; // Показываем кнопку "Новые посты"
             }
-        } catch (error) {
-            console.error('Error checking for new posts:', error);
-        }
-    }, 10000);
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('Subscribed to posts channel');
+            } else {
+                console.error('Failed to subscribe to posts channel:', status);
+            }
+        });
 }
 
 function sortPostsCache() {
@@ -236,6 +243,7 @@ function sortPostsCache() {
         const timeA = new Date(a.timestamp).getTime();
         const timeB = new Date(b.timestamp).getTime();
         if (timeA === timeB) {
+            // Если timestamp одинаковый, сортируем по id (новые посты имеют больший id)
             return b.id - a.id;
         }
         return timeB - timeA;
@@ -790,7 +798,6 @@ async function loadRegistrations(tournamentId, isCreator) {
                 registrationList.appendChild(regCard);
             });
 
-            // Привязываем обработчики к кнопкам "Удалить"
             if (isCreator) {
                 const deleteButtons = document.querySelectorAll('.delete-registration-btn');
                 deleteButtons.forEach(button => {
@@ -813,10 +820,8 @@ async function loadRegistrations(tournamentId, isCreator) {
 
 async function deleteRegistration(registrationId, tournamentId) {
     try {
-        // Удаляем запись из таблицы registrations по id
         await supabaseFetch(`registrations?id=eq.${registrationId}`, 'DELETE');
         alert('Команда успешно удалена!');
-        // Перезагружаем список регистраций
         const isCreator = (await supabaseFetch(`tournaments?id=eq.${tournamentId}`, 'GET'))[0].creator_id === userData.telegramUsername;
         await loadRegistrations(tournamentId, isCreator);
     } catch (error) {
