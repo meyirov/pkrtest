@@ -90,6 +90,13 @@ body {
     overflow-y: auto;
 }
 
+#posts-loading {
+    color: #8b5cf6;
+    font-size: 14px;
+    text-align: center;
+    padding: 10px;
+}
+
 .post {
     background: #2a2a2a;
     padding: 15px;
@@ -316,6 +323,15 @@ body {
 #tournament-header p {
     margin: 5px 0;
     font-size: 14px;
+}
+
+#tournament-header a {
+    color: #8b5cf6;
+    text-decoration: none;
+}
+
+#tournament-header a:hover {
+    text-decoration: underline;
 }
 
 #tournament-description {
@@ -673,4 +689,144 @@ body {
 
 .delete-registration-btn:hover {
     background: #cc0000;
+}
+
+/* Стили для формы создания турнира */
+#create-tournament-btn {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+#create-tournament-btn:hover {
+    background: #7c3aed;
+}
+
+#create-tournament-form {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#create-tournament-form input,
+#create-tournament-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+#create-tournament-form textarea {
+    height: 60px;
+    resize: none;
+}
+
+#create-tournament-form button {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#create-tournament-form button:hover {
+    background: #7c3aed;
+}
+
+/* Стили для секции профиля */
+#profile {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#profile h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+#profile p {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+#profile input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #3a3a3a;
+    color: #e0e0e0;
+}
+
+#profile button {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#profile button:hover {
+    background: #7c3aed;
+}
+
+/* Стили для секции рейтинга */
+#rating {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#rating h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+/* Стили для секции EDU */
+#edu {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#edu h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+/* Стили для кнопки "Новые посты" */
+.new-posts-btn {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 10px;
+    width: 100%;
+    text-align: center;
+}
+
+.new-posts-btn:hover {
+    background: #7c3aed;
 }
