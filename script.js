@@ -356,10 +356,10 @@ function renderNewPost(post, prepend = false) {
             <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
         </div>
         <div class="comment-section" id="comments-${post.id}" style="display: none;">
-            <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Жаңа комментарии</button>
+            <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
             <div class="comment-list" id="comment-list-${post.id}" style="max-height: 200px; overflow-y: auto;"></div>
             <div class="comment-form">
-                <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Комментарий жазу..."></textarea>
+                <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий..."></textarea>
                 <button onclick="addComment(${post.id})">Отправить</button>
             </div>
         </div>
@@ -402,10 +402,10 @@ async function renderMorePosts(newPosts) {
                 <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
             </div>
             <div class="comment-section" id="comments-${post.id}" style="display: none;">
-                <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Жаңа комментарии</button>
+                <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
                 <div class="comment-list" id="comment-list-${post.id}" style="max-height: 200px; overflow-y: auto;"></div>
                 <div class="comment-form">
-                    <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Комментарий жазу..."></textarea>
+                    <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий..."></textarea>
                     <button onclick="addComment(${post.id})">Отправить</button>
                 </div>
             </div>
@@ -494,11 +494,11 @@ async function updatePost(postId) {
             <button class="comment-toggle-btn" onclick="toggleComments(${postId})">💬 Комментарии (${commentCount})</button>
         </div>
         <div class="comment-section" id="comments-${postId}" style="display: none;">
-            <button id="new-comments-btn-${postId}" class="new-posts-btn" style="display: none;">Жаңа комментарии</button>
+            <button id="new-comments-btn-${postId}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
             <div class="comment-list" id="comment-list-${postId}" style="max-height: 200px; overflow-y: auto;"></div>
             <div class="comment-form">
-                <textarea class="comment-input" id="comment-input-${postId}" placeholder="Комментарий жазу..."></textarea>
-                <button onclick="addComment(${postId})">Жіберу</button>
+                <textarea class="comment-input" id="comment-input-${postId}" placeholder="Написать комментарий..."></textarea>
+                <button onclick="addComment(${postId})">Отправить</button>
             </div>
         </div>
     `;
@@ -1034,8 +1034,8 @@ function initTournamentPosts(isCreator, tournamentName) {
     if (isCreator) {
         postsSection.innerHTML = `
             <div id="new-tournament-post">
-                <textarea id="tournament-post-text" placeholder="Турнир атынан пост жазу"></textarea>
-                <button id="submit-tournament-post">Жіберу</button>
+                <textarea id="tournament-post-text" placeholder="Создать пост от имени турнира"></textarea>
+                <button id="submit-tournament-post">Опубликовать</button>
             </div>
             <div id="tournament-posts-list"></div>
         `;
@@ -1195,7 +1195,7 @@ async function loadRegistrations(tournamentId, isCreator) {
                 });
             }
         } else {
-            registrationList.innerHTML = '<p>Бірінші болып тіркеліңіз!</p>';
+            registrationList.innerHTML = '<p>Пока нет зарегистрированных команд.</p>';
         }
     } catch (error) {
         console.error('Error loading registrations:', error);
@@ -1225,15 +1225,15 @@ function initBracket(isCreator) {
                     <option value="АПФ">АПФ</option>
                     <option value="БПФ">БПФ</option>
                 </select>
-                <input id="bracket-faction-count" type="number" placeholder="Фракция саны (түп)" min="2" step="2">
+                <input id="bracket-faction-count" type="number" placeholder="Количество фракций (чётное)" min="2" step="2">
                 <select id="bracket-round-count">
                     <option value="1">1 раунд</option>
-                    <option value="2">2 раунд</option>
-                    <option value="3">3 раунд</option>
-                    <option value="4">4 раунд</option>
-                    <option value="5">5 раунд</option>
+                    <option value="2">2 раунда</option>
+                    <option value="3">3 раунда</option>
+                    <option value="4">4 раунда</option>
+                    <option value="5">5 раундов</option>
                 </select>
-                <button id="generate-bracket-btn">Сетка құру</button>
+                <button id="generate-bracket-btn">Сформировать сетку</button>
             </div>
             <div id="bracket-display"></div>
         `;
@@ -1269,7 +1269,7 @@ async function generateBracket() {
         faction_name: reg.faction_name,
         club: reg.club
     }));
-    const positions = format === 'АПФ' ? ['Үкімет', 'Оппозиция'] : ['АҮ', 'АО', 'ЖҮ', 'ЖО'];
+    const positions = format === 'АПФ' ? ['Правительство', 'Оппозиция'] : ['Открывающая Правительство', 'Открывающая Оппозиция', 'Закрывающая Правительство', 'Закрывающая Оппозиция'];
     const teamsPerMatch = format === 'АПФ' ? 2 : 4;
 
     const matches = [];
@@ -1335,7 +1335,7 @@ async function loadBracket(tournamentId) {
     try {
         const bracket = await supabaseFetch(`brackets?tournament_id=eq.${tournamentId}&order=timestamp.desc&limit=1`, 'GET');
         if (!bracket || bracket.length === 0) {
-            bracketDisplay.innerHTML = '<p>Сетка әлі дайын емес.</p>';
+            bracketDisplay.innerHTML = '<p>Сетка ещё не сформирована.</p>';
             return;
         }
 
@@ -1360,7 +1360,7 @@ async function loadBracket(tournamentId) {
                     if (isCreator && !data.published) {
                         matchHTML += `
                             <input type="text" id="room-input-${round.round}-${matchIdx}" name="room-${round.round}-${matchIdx}" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
-                            <input type="text" id="judge-input-${round.round}-${matchIdx}" name="judge-${round.round}-${matchIdx}" placeholder="Төреші" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
+                            <input type="text" id="judge-input-${round.round}-${matchIdx}" name="judge-${round.round}-${matchIdx}" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
                         `;
                     } else if (data.published) {
                         matchHTML += `
@@ -1393,7 +1393,7 @@ async function loadBracket(tournamentId) {
                 bracketDisplay.appendChild(publishBtn);
             }
         } else {
-            bracketDisplay.innerHTML = '<p>Сетка әлі дайын емес.</p>';
+            bracketDisplay.innerHTML = '<p>Сетка ещё не опубликована.</p>';
         }
     } catch (error) {
         console.error('Error loading bracket:', error);
@@ -1403,17 +1403,14 @@ async function loadBracket(tournamentId) {
 
 const ratingList = document.getElementById('rating-list');
 const rating = [
-    { name: 'Ахмет Байтұрсынов', points: 150 },
-    { name: 'Шәкәрім Құдайбердіұлы', points: 120 },
-    { name: 'Мағжан Жұмабаев', points: 110 },
-    { name: 'Жүсіпбек Аймауытов', points: 105 },
-    { name: 'Міржақып Дулатов', points: 99 }
+    { name: 'Иван Иванов', points: 150 },
+    { name: 'Анна Петрова', points: 120 }
 ];
 
 rating.forEach(player => {
     const div = document.createElement('div');
     div.classList.add('post');
-    div.innerHTML = `<strong>${player.name}</strong> - ${player.points} балл`;
+    div.innerHTML = `<strong>${player.name}</strong> - ${player.points} очков`;
     ratingList.appendChild(div);
 });
 
