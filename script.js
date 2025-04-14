@@ -1,57 +1,28 @@
-// Укажи свои Supabase URL и ключ здесь
-const SUPABASE_URL = 'https://dwkbptqrblyiqymnqjiv.supabase.co'; // Замени на реальный URL
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3a2JwdHFyYmx5aXF5bW5xaml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzA3NTcsImV4cCI6MjA1OTAwNjc1N30.QIHms9_kllO7SMxxUlu2U_ugICz1q_cr2-fO61092N4'; // Замени на реальный ключ
-
-console.log("Script started");
-
-// Проверяем, что Supabase URL и ключ определены
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("SUPABASE_URL or SUPABASE_KEY is not defined!");
-    document.getElementById('error-message').style.display = 'block';
-    document.getElementById('error-message').innerText = "Ошибка: SUPABASE_URL или SUPABASE_KEY не определены.";
-    throw new Error("SUPABASE_URL or SUPABASE_KEY is not defined");
-}
-
 // Подключаем Supabase клиент
 const { createClient } = supabase;
-console.log("Supabase client imported");
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-console.log("Supabase client initialized");
 
-// Инициализируем Telegram Web App
 const tg = window.Telegram.WebApp;
 tg.ready();
-console.log("Telegram Web App ready");
 
-// Глобальный обработчик ошибок
-window.onerror = function (msg, url, lineNo, columnNo, error) {
-    console.error("Global error:", msg, "at", url, lineNo, columnNo, error);
-    document.getElementById('error-message').style.display = 'block';
-    document.getElementById('error-message').innerText = `Ошибка: ${msg}`;
-    return false;
-};
-
-// Переменные
 const registrationModal = document.getElementById('registration-modal');
 const appContainer = document.getElementById('app-container');
 const regFullname = document.getElementById('reg-fullname');
 const submitProfileRegBtn = document.getElementById('submit-profile-reg-btn');
 let userData = {};
 let postsCache = [];
-let lastPostId = null;
+let lastPostId = null; // Для пагинации и отслеживания новых постов
 let currentTournamentId = null;
 let isPostsLoaded = false;
-let isLoadingMore = false;
-let newPostsCount = 0;
-let channel = null;
-let commentChannels = new Map();
-let commentsCache = new Map();
-let lastCommentIds = new Map();
-let newCommentsCount = new Map();
+let isLoadingMore = false; // Флаг для предотвращения множественных загрузок
+let newPostsCount = 0; // Счётчик новых постов для кнопки "Новые посты"
+let channel = null; // Для управления Realtime-подпиской на посты
+let commentChannels = new Map(); // Для управления Realtime-подписками на комментарии
+let commentsCache = new Map(); // Кэш комментариев по postId
+let lastCommentIds = new Map(); // Последний ID комментария для каждого поста
+let newCommentsCount = new Map(); // Счётчик новых комментариев для каждого поста
 
-// Функция для запросов к Supabase с логированием
 async function supabaseFetch(endpoint, method, body = null, retries = 3) {
-    console.log(`Fetching Supabase: ${endpoint}`);
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -71,40 +42,32 @@ async function supabaseFetch(endpoint, method, body = null, retries = 3) {
             const text = await response.text();
             return text ? JSON.parse(text) : null;
         } catch (error) {
-            if (attempt === retries) {
-                console.error(`Failed to fetch Supabase after ${retries} attempts:`, error);
-                throw error;
-            }
+            if (attempt === retries) throw error;
             console.warn(`Retrying request (${attempt}/${retries})...`, error);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Экспоненциальная задержка
         }
     }
 }
 
-// Проверка профиля
 async function checkProfile() {
-    console.log("Checking profile...");
-    try {
-        const telegramUsername = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.username : null;
-        if (!telegramUsername) {
-            throw new Error('Telegram username недоступен! Укажите username в настройках Telegram.');
-        }
-        userData.telegramUsername = telegramUsername;
-        console.log("Telegram username:", telegramUsername);
+    const telegramUsername = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.username : null;
+    if (!telegramUsername) {
+        alert('Telegram username недоступен! Укажите username в настройках Telegram.');
+        return;
+    }
+    userData.telegramUsername = telegramUsername;
 
+    try {
         const profiles = await supabaseFetch(`profiles?telegram_username=eq.${telegramUsername}`, 'GET');
-        console.log("Profiles fetched:", profiles);
         if (profiles && profiles.length > 0) {
             userData.fullname = profiles[0].fullname;
             showApp();
         } else {
-            console.log("No profile found, showing registration modal");
             registrationModal.style.display = 'block';
         }
     } catch (error) {
         console.error('Error checking profile:', error);
-        document.getElementById('error-message').style.display = 'block';
-        document.getElementById('error-message').innerText = `Ошибка: ${error.message}`;
+        registrationModal.style.display = 'block';
     }
 }
 
@@ -128,7 +91,6 @@ submitProfileRegBtn.addEventListener('click', async () => {
 });
 
 function showApp() {
-    console.log("Showing app...");
     appContainer.style.display = 'block';
     document.getElementById('username').textContent = userData.telegramUsername;
     document.getElementById('fullname').value = userData.fullname;
@@ -144,25 +106,6 @@ function debounce(func, wait) {
     return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-function throttle(func, wait) {
-    let timeout = null;
-    let lastCall = 0;
-    return function (...args) {
-        const now = Date.now();
-        const remaining = wait - (now - lastCall);
-        if (remaining <= 0) {
-            lastCall = now;
-            func.apply(this, args);
-        } else if (!timeout) {
-            timeout = setTimeout(() => {
-                lastCall = Date.now();
-                timeout = null;
-                func.apply(this, args);
-            }, remaining);
-        }
     };
 }
 
@@ -303,7 +246,7 @@ async function loadMorePosts() {
     }
 }
 
-async function loadNew    loadNewPosts() {
+async function loadNewPosts() {
     try {
         const newPosts = await supabaseFetch(`posts?id=gt.${lastPostId}&order=id.desc`, 'GET');
         if (newPosts && newPosts.length > 0) {
@@ -358,11 +301,11 @@ function isUserAtTop() {
 
 function setupInfiniteScroll() {
     const feedSection = document.getElementById('feed');
-    feedSection.removeEventListener('scroll', throttledLoadMorePosts);
-    feedSection.addEventListener('scroll', throttledLoadMorePosts);
+    feedSection.removeEventListener('scroll', debouncedLoadMorePosts);
+    feedSection.addEventListener('scroll', debouncedLoadMorePosts);
 }
 
-const throttledLoadMorePosts = throttle(() => {
+const debouncedLoadMorePosts = debounce(() => {
     const feedSection = document.getElementById('feed');
     if (feedSection.scrollHeight - feedSection.scrollTop <= feedSection.clientHeight + 100) {
         loadMorePosts();
@@ -422,14 +365,13 @@ function renderNewPost(post, prepend = false) {
         </div>
     `;
 
-    requestAnimationFrame(() => {
-        if (prepend) {
-            postsDiv.prepend(postDiv);
-        } else {
-            postsDiv.appendChild(postDiv);
-        }
-        loadReactionsAndComments(post.id);
-    });
+    if (prepend) {
+        postsDiv.prepend(postDiv);
+    } else {
+        postsDiv.appendChild(postDiv);
+    }
+
+    loadReactionsAndComments(post.id);
 }
 
 async function renderMorePosts(newPosts) {
@@ -469,10 +411,9 @@ async function renderMorePosts(newPosts) {
             </div>
         `;
 
-        requestAnimationFrame(() => {
-            postsDiv.appendChild(postDiv);
-            loadReactionsAndComments(post.id);
-        });
+        postsDiv.appendChild(postDiv);
+
+        loadReactionsAndComments(post.id);
     }
 }
 
@@ -753,14 +694,14 @@ function setupCommentInfiniteScroll(postId) {
         commentChannels.delete(postId);
     }
 
-    const throttledLoadMoreComments = throttle(() => {
+    const debouncedLoadMoreComments = debounce(() => {
         if (commentList.scrollTop <= 50) {
             loadMoreComments(postId);
         }
     }, 300);
 
-    commentList.removeEventListener('scroll', throttledLoadMoreComments);
-    commentList.addEventListener('scroll', throttledLoadMoreComments);
+    commentList.removeEventListener('scroll', debouncedLoadMoreComments);
+    commentList.addEventListener('scroll', debouncedLoadMoreComments);
 
     // Подписываемся на новые комментарии
     subscribeToNewComments(postId);
@@ -816,16 +757,15 @@ function renderNewComment(postId, comment, append = false) {
         <div class="comment-content">${content}</div>
     `;
 
-    requestAnimationFrame(() => {
-        if (append) {
-            commentList.appendChild(commentDiv);
-            if (isUserAtBottom(postId)) {
-                commentList.scrollTop = commentList.scrollHeight;
-            }
-        } else {
-            commentList.prepend(commentDiv);
+    if (append) {
+        commentList.appendChild(commentDiv);
+        // Прокручиваем вниз, если пользователь внизу
+        if (isUserAtBottom(postId)) {
+            commentList.scrollTop = commentList.scrollHeight;
         }
-    });
+    } else {
+        commentList.prepend(commentDiv);
+    }
 }
 
 async function renderMoreComments(postId, newComments) {
@@ -845,10 +785,7 @@ async function renderMoreComments(postId, newComments) {
             </div>
             <div class="comment-content">${content}</div>
         `;
-        
-        requestAnimationFrame(() => {
-            commentList.prepend(commentDiv);
-        });
+        commentList.prepend(commentDiv);
     }
 }
 
@@ -1097,4 +1034,384 @@ function initTournamentPosts(isCreator, tournamentName) {
     if (isCreator) {
         postsSection.innerHTML = `
             <div id="new-tournament-post">
-                <textarea
+                <textarea id="tournament-post-text" placeholder="Создать пост от имени турнира"></textarea>
+                <button id="submit-tournament-post">Опубликовать</button>
+            </div>
+            <div id="tournament-posts-list"></div>
+        `;
+        document.getElementById('submit-tournament-post').onclick = async () => {
+            const text = document.getElementById('tournament-post-text').value.trim();
+            if (!text) {
+                alert('Пожалуйста, введите текст поста!');
+                return;
+            }
+            try {
+                await supabaseFetch('tournament_posts', 'POST', {
+                    tournament_id: currentTournamentId,
+                    creator_id: userData.telegramUsername,
+                    text: text,
+                    timestamp: new Date().toISOString()
+                });
+                document.getElementById('tournament-post-text').value = '';
+                loadTournamentPosts(currentTournamentId);
+            } catch (error) {
+                console.error('Error saving tournament post:', error);
+                alert('Ошибка: ' + error.message);
+            }
+        };
+    } else {
+        postsSection.innerHTML = `<div id="tournament-posts-list"></div>`;
+    }
+}
+
+async function loadTournamentPosts(tournamentId) {
+    try {
+        const posts = await supabaseFetch(`tournament_posts?tournament_id=eq.${tournamentId}&order=timestamp.desc`, 'GET');
+        const postsList = document.getElementById('tournament-posts-list');
+        postsList.innerHTML = '';
+        if (posts && posts.length > 0) {
+            const tournament = await supabaseFetch(`tournaments?id=eq.${tournamentId}`, 'GET');
+            const tournamentName = tournament[0].name;
+            posts.forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.classList.add('post');
+                postDiv.innerHTML = `
+                    <div class="post-header">
+                        <strong>Турнир: ${tournamentName}</strong>
+                        <span>${getTimeAgo(new Date(post.timestamp))}</span>
+                    </div>
+                    <div class="post-content">${post.text}</div>
+                `;
+                postsList.appendChild(postDiv);
+            });
+        } else {
+            postsList.innerHTML = '<p>Пока нет постов от турнира.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading tournament posts:', error);
+        postsList.innerHTML = '<p>Ошибка загрузки постов.</p>';
+    }
+}
+
+function initRegistration() {
+    const registerBtn = document.getElementById('register-tournament-btn');
+    const registrationForm = document.getElementById('registration-form');
+    const submitRegistrationBtn = document.getElementById('submit-registration-btn');
+
+    registerBtn.onclick = () => {
+        registrationForm.classList.toggle('form-hidden');
+    };
+
+    submitRegistrationBtn.addEventListener('click', async () => {
+        // Отключаем кнопку, чтобы предотвратить повторные клики
+        submitRegistrationBtn.disabled = true;
+
+        const registration = {
+            tournament_id: currentTournamentId,
+            faction_name: document.getElementById('reg-faction-name').value,
+            speaker1: document.getElementById('reg-speaker1').value,
+            speaker2: document.getElementById('reg-speaker2').value,
+            club: document.getElementById('reg-club').value,
+            city: document.getElementById('reg-city').value,
+            contacts: document.getElementById('reg-contacts').value,
+            extra: document.getElementById('reg-extra').value,
+            timestamp: new Date().toISOString()
+        };
+
+        if (!registration.faction_name) {
+            alert('Пожалуйста, укажите название фракции!');
+            submitRegistrationBtn.disabled = false;
+            return;
+        }
+        if (!registration.club) {
+            alert('Пожалуйста, укажите название клуба!');
+            submitRegistrationBtn.disabled = false;
+            return;
+        }
+
+        try {
+            await supabaseFetch('registrations', 'POST', registration);
+            alert('Регистрация отправлена!');
+            registrationForm.classList.add('form-hidden');
+            document.getElementById('reg-faction-name').value = '';
+            document.getElementById('reg-speaker1').value = '';
+            document.getElementById('reg-speaker2').value = '';
+            document.getElementById('reg-club').value = '';
+            document.getElementById('reg-city').value = '';
+            document.getElementById('reg-contacts').value = '';
+            document.getElementById('reg-extra').value = '';
+            loadRegistrations(currentTournamentId);
+        } catch (error) {
+            console.error('Error saving registration:', error);
+            alert('Ошибка: ' + error.message);
+        } finally {
+            submitRegistrationBtn.disabled = false;
+        }
+    });
+}
+
+async function loadRegistrations(tournamentId, isCreator) {
+    try {
+        const registrations = await supabaseFetch(`registrations?tournament_id=eq.${tournamentId}&order=timestamp.asc`, 'GET');
+        const registrationList = document.getElementById('registration-list');
+        registrationList.innerHTML = '';
+
+        // Удаляем возможные дубли на клиентской стороне
+        const seen = new Set();
+        const uniqueRegistrations = registrations.filter(reg => {
+            const key = `${reg.tournament_id}|${reg.faction_name}|${reg.club}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        if (uniqueRegistrations.length > 0) {
+            uniqueRegistrations.forEach(reg => {
+                const regCard = document.createElement('div');
+                regCard.classList.add('registration-card');
+                regCard.setAttribute('data-registration-id', reg.id);
+                regCard.innerHTML = `
+                    <strong>${reg.faction_name || 'Не указано'}</strong>
+                    <p>Клуб: ${reg.club || 'Не указано'}</p>
+                    <p>Спикер 1: ${reg.speaker1 || 'Не указано'}</p>
+                    <p>Спикер 2: ${reg.speaker2 || 'Не указано'}</p>
+                    <p>Город: ${reg.city || 'Не указано'}</p>
+                    <p>Контакты: ${reg.contacts || 'Не указано'}</p>
+                    <p>Дополнительно: ${reg.extra || 'Нет'}</p>
+                    ${isCreator ? `<button class="delete-registration-btn" data-registration-id="${reg.id}">Удалить</button>` : ''}
+                `;
+                registrationList.appendChild(regCard);
+            });
+
+            if (isCreator) {
+                const deleteButtons = document.querySelectorAll('.delete-registration-btn');
+                deleteButtons.forEach(button => {
+                    button.onclick = async () => {
+                        const registrationId = button.getAttribute('data-registration-id');
+                        if (confirm('Вы уверены, что хотите удалить эту команду?')) {
+                            await deleteRegistration(registrationId, tournamentId);
+                        }
+                    };
+                });
+            }
+        } else {
+            registrationList.innerHTML = '<p>Пока нет зарегистрированных команд.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading registrations:', error);
+        alert('Ошибка загрузки регистраций: ' + error.message);
+    }
+}
+
+async function deleteRegistration(registrationId, tournamentId) {
+    try {
+        await supabaseFetch(`registrations?id=eq.${registrationId}`, 'DELETE');
+        alert('Команда успешно удалена!');
+        const isCreator = (await supabaseFetch(`tournaments?id=eq.${tournamentId}`, 'GET'))[0].creator_id === userData.telegramUsername;
+        await loadRegistrations(tournamentId, isCreator);
+    } catch (error) {
+        console.error('Error deleting registration:', error);
+        alert('Ошибка при удалении команды: ' + error.message);
+    }
+}
+
+function initBracket(isCreator) {
+    const bracketSection = document.getElementById('tournament-bracket');
+    bracketSection.innerHTML = '';
+    if (isCreator) {
+        bracketSection.innerHTML = `
+            <div id="bracket-form">
+                <select id="bracket-format">
+                    <option value="АПФ">АПФ</option>
+                    <option value="БПФ">БПФ</option>
+                </select>
+                <input id="bracket-faction-count" type="number" placeholder="Количество фракций (чётное)" min="2" step="2">
+                <select id="bracket-round-count">
+                    <option value="1">1 раунд</option>
+                    <option value="2">2 раунда</option>
+                    <option value="3">3 раунда</option>
+                    <option value="4">4 раунда</option>
+                    <option value="5">5 раундов</option>
+                </select>
+                <button id="generate-bracket-btn">Сформировать сетку</button>
+            </div>
+            <div id="bracket-display"></div>
+        `;
+        document.getElementById('generate-bracket-btn').onclick = async () => {
+            generateBracket();
+        };
+    } else {
+        bracketSection.innerHTML = `<div id="bracket-display"></div>`;
+    }
+}
+
+async function generateBracket() {
+    const format = document.getElementById('bracket-format').value;
+    const factionCount = parseInt(document.getElementById('bracket-faction-count').value);
+    const roundCount = parseInt(document.getElementById('bracket-round-count').value);
+
+    if (isNaN(factionCount) || factionCount < 2 || factionCount % 2 !== 0) {
+        alert('Количество фракций должно быть чётным и больше 0!');
+        return;
+    }
+    if (format === 'БПФ' && factionCount % 4 !== 0) {
+        alert('Для формата БПФ количество фракций должно быть кратно 4!');
+        return;
+    }
+
+    const registrations = await supabaseFetch(`registrations?tournament_id=eq.${currentTournamentId}&order=timestamp.asc`, 'GET');
+    if (!registrations || registrations.length < factionCount) {
+        alert('Недостаточно зарегистрированных команд!');
+        return;
+    }
+
+    const teams = registrations.slice(0, factionCount).map(reg => ({
+        faction_name: reg.faction_name,
+        club: reg.club
+    }));
+    const positions = format === 'АПФ' ? ['Правительство', 'Оппозиция'] : ['Открывающая Правительство', 'Открывающая Оппозиция', 'Закрывающая Правительство', 'Закрывающая Оппозиция'];
+    const teamsPerMatch = format === 'АПФ' ? 2 : 4;
+
+    const matches = [];
+    const usedPairs = new Set();
+
+    for (let round = 0; round < roundCount; round++) {
+        const roundMatches = [];
+        const availableTeams = [...teams];
+        while (availableTeams.length >= teamsPerMatch) {
+            const matchTeams = [];
+            for (let i = 0; i < teamsPerMatch; i++) {
+                const randomIndex = Math.floor(Math.random() * availableTeams.length);
+                matchTeams.push(availableTeams.splice(randomIndex, 1)[0]);
+            }
+
+            const matchKey = matchTeams.map(team => team.faction_name).sort().join('|');
+            if (usedPairs.has(matchKey)) {
+                availableTeams.push(...matchTeams);
+                continue;
+            }
+            usedPairs.add(matchKey);
+
+            const match = {
+                teams: matchTeams.map((team, idx) => ({
+                    faction_name: team.faction_name,
+                    club: team.club,
+                    position: positions[idx]
+                })),
+                room: '',
+                judge: ''
+            };
+            roundMatches.push(match);
+        }
+        if (roundMatches.length > 0) {
+            matches.push({ round: round + 1, matches: roundMatches });
+        }
+    }
+
+    const bracket = {
+        tournament_id: currentTournamentId,
+        format: format,
+        faction_count: factionCount,
+        round_count: roundCount,
+        matches: matches,
+        published: false,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        await supabaseFetch('brackets', 'POST', bracket);
+        loadBracket(currentTournamentId);
+    } catch (error) {
+        console.error('Error saving bracket:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function loadBracket(tournamentId) {
+    const bracketSection = document.getElementById('tournament-bracket');
+    const bracketDisplay = document.getElementById('bracket-display');
+    const isCreator = (await supabaseFetch(`tournaments?id=eq.${tournamentId}`, 'GET'))[0].creator_id === userData.telegramUsername;
+
+    try {
+        const bracket = await supabaseFetch(`brackets?tournament_id=eq.${tournamentId}&order=timestamp.desc&limit=1`, 'GET');
+        if (!bracket || bracket.length === 0) {
+            bracketDisplay.innerHTML = '<p>Сетка ещё не сформирована.</p>';
+            return;
+        }
+
+        const data = bracket[0];
+        bracketDisplay.innerHTML = '';
+
+        if (data.published || isCreator) {
+            data.matches.forEach(round => {
+                const roundDiv = document.createElement('div');
+                roundDiv.classList.add('bracket-round');
+                roundDiv.innerHTML = `<h3>Раунд ${round.round}</h3>`;
+                
+                round.matches.forEach((match, matchIdx) => {
+                    const matchDiv = document.createElement('div');
+                    matchDiv.classList.add('bracket-match');
+                    let matchHTML = '';
+                    match.teams.forEach(team => {
+                        matchHTML += `
+                            <p>${team.position}: ${team.faction_name} <span class="team-club">(${team.club})</span></p>
+                        `;
+                    });
+                    if (isCreator && !data.published) {
+                        matchHTML += `
+                            <input type="text" id="room-input-${round.round}-${matchIdx}" name="room-${round.round}-${matchIdx}" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
+                            <input type="text" id="judge-input-${round.round}-${matchIdx}" name="judge-${round.round}-${matchIdx}" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
+                        `;
+                    } else if (data.published) {
+                        matchHTML += `
+                            <p>Кабинет: ${match.room || 'Не указан'}</p>
+                            <p>Судья: ${match.judge || 'Не указан'}</p>
+                        `;
+                    }
+                    matchDiv.innerHTML = matchHTML;
+                    roundDiv.appendChild(matchDiv);
+                });
+                bracketDisplay.appendChild(roundDiv);
+            });
+
+            if (isCreator && !data.published) {
+                const publishBtn = document.createElement('button');
+                publishBtn.id = 'publish-bracket-btn';
+                publishBtn.textContent = 'Опубликовать';
+                publishBtn.onclick = async () => {
+                    const updatedMatches = data.matches.map(round => ({
+                        round: round.round,
+                        matches: round.matches.map((match, matchIdx) => ({
+                            teams: match.teams,
+                            room: document.querySelector(`.room-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value,
+                            judge: document.querySelector(`.judge-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value
+                        }))
+                    }));
+                    await supabaseFetch(`brackets?id=eq.${data.id}`, 'PATCH', { matches: updatedMatches, published: true });
+                    loadBracket(tournamentId);
+                };
+                bracketDisplay.appendChild(publishBtn);
+            }
+        } else {
+            bracketDisplay.innerHTML = '<p>Сетка ещё не опубликована.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading bracket:', error);
+        bracketDisplay.innerHTML = '<p>Ошибка загрузки сетки.</p>';
+    }
+}
+
+const ratingList = document.getElementById('rating-list');
+const rating = [
+    { name: 'Иван Иванов', points: 150 },
+    { name: 'Анна Петрова', points: 120 }
+];
+
+rating.forEach(player => {
+    const div = document.createElement('div');
+    div.classList.add('post');
+    div.innerHTML = `<strong>${player.name}</strong> - ${player.points} очков`;
+    ratingList.appendChild(div);
+});
+
+checkProfile();
