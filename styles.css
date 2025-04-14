@@ -6,14 +6,14 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f0f0f;
-    color: #e6e6e6;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* Современный шрифт как в X */
+    background: #0f0f0f; /* Тёмный фон */
+    color: #e6e6e6; /* Мягкий белый для текста */
     height: 100vh;
     display: flex;
     flex-direction: column;
     line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased; /* Плавные шрифты */
 }
 
 /* Контейнер */
@@ -21,17 +21,14 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
-    max-width: 600px;
-    margin: 0 auto;
 }
 
 /* Основной контент */
 .main-content {
     flex: 1;
-    padding: 16px;
-    padding-bottom: 80px;
+    padding: 10px;
+    padding-bottom: 60px; /* Учитываем нижнюю навигацию */
     overflow-y: auto;
-    background: linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%);
 }
 
 .content {
@@ -44,10 +41,10 @@ body {
 
 /* Новый пост */
 #new-post {
-    margin-bottom: 16px;
-    background: #1a1a1a;
-    padding: 12px;
-    border-radius: 12px;
+    margin-bottom: 10px;
+    background: #1a1a1a; /* Тёмный фон для постов */
+    padding: 10px;
+    border-radius: 12px; /* Более современные скругления */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -60,8 +57,8 @@ body {
 #new-post textarea {
     width: 100%;
     height: 80px;
-    padding: 12px;
-    border: none;
+    padding: 10px;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -79,7 +76,7 @@ body {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    margin-top: 8px;
+    margin-top: 5px;
 }
 
 .new-post-icons {
@@ -87,11 +84,11 @@ body {
 }
 
 #new-post button {
-    padding: 8px 20px;
-    background: #8b5cf6;
+    padding: 8px 16px;
+    background: #8b5cf6; /* Фиолетовый акцент */
     color: #ffffff;
     border: none;
-    border-radius: 24px;
+    border-radius: 24px; /* Скругление как в X */
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
@@ -105,14 +102,14 @@ body {
 
 /* Посты */
 #posts {
-    max-height: calc(100vh - 220px);
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
 }
 
 .post {
     background: #1a1a1a;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease;
@@ -126,7 +123,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .post-user {
@@ -142,7 +139,7 @@ body {
 }
 
 .post-user span {
-    color: #6b7280;
+    color: #6b7280; /* Серый как в X */
     font-size: 14px;
 }
 
@@ -152,15 +149,15 @@ body {
 }
 
 .post-content {
-    margin-top: 8px;
+    margin-top: 5px;
     font-size: 15px;
     color: #d1d5db;
 }
 
 .post-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 12px;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .reaction-btn {
@@ -168,7 +165,7 @@ body {
     color: #e6e6e6;
     border: none;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     cursor: pointer;
     font-size: 14px;
     transition: background 0.2s ease, color 0.2s ease;
@@ -192,7 +189,7 @@ body {
     color: #e6e6e6;
     border: none;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     cursor: pointer;
     font-size: 14px;
     transition: background 0.2s ease;
@@ -204,26 +201,26 @@ body {
 
 /* Комментарии */
 .comment-section {
-    margin-top: 12px;
-    padding: 12px;
+    margin-top: 10px;
+    padding: 10px;
     background: #1f1f1f;
     border-radius: 8px;
 }
 
 .comment-list {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     max-height: 200px;
     overflow-y: auto;
 }
 
 .comment {
-    padding: 8px 0;
+    padding: 5px 0;
     border-bottom: 1px solid #333;
 }
 
 .comment-user {
     font-size: 14px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .comment-user strong {
@@ -243,14 +240,14 @@ body {
 .comment-form {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
 }
 
 .comment-input {
     width: 100%;
     height: 40px;
     padding: 8px;
-    border: none;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -283,15 +280,15 @@ body {
 .new-posts-btn {
     display: none;
     position: sticky;
-    top: 12px;
+    top: 10px;
     z-index: 10;
     background: #8b5cf6;
     color: #ffffff;
     border: none;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border-radius: 24px;
     cursor: pointer;
-    margin: 12px auto;
+    margin: 10px auto;
     width: fit-content;
     font-weight: 600;
     font-size: 14px;
@@ -310,8 +307,8 @@ body {
     display: flex;
     align-items: center;
     background: #1a1a1a;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
@@ -326,7 +323,7 @@ body {
 .tournament-logo {
     width: 64px;
     height: 64px;
-    margin-right: 12px;
+    margin-right: 10px;
     border-radius: 8px;
     object-fit: cover;
     background: #262626;
@@ -354,9 +351,9 @@ body {
 /* Заголовок турнира */
 #tournament-header {
     background: #1a1a1a;
-    padding: 16px;
+    padding: 10px;
     border-radius: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -365,7 +362,7 @@ body {
     max-height: 180px;
     object-fit: cover;
     border-radius: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 #tournament-header strong {
@@ -373,20 +370,20 @@ body {
     font-weight: 600;
     color: #ffffff;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 #tournament-header p {
-    margin: 4px 0;
+    margin: 3px 0;
     font-size: 14px;
     color: #d1d5db;
 }
 
 #tournament-description {
     background: #1a1a1a;
-    padding: 16px;
+    padding: 10px;
     border-radius: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -414,14 +411,14 @@ body {
     border: 0;
     height: 1px;
     background: #333;
-    margin: 16px 0;
+    margin: 10px 0;
 }
 
 /* Вкладки турнира */
 .tournament-tabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .tab-btn {
@@ -455,9 +452,9 @@ body {
 
 /* Новый пост турнира */
 #new-tournament-post {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     background: #1a1a1a;
-    padding: 12px;
+    padding: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -465,8 +462,8 @@ body {
 #new-tournament-post textarea {
     width: 100%;
     height: 80px;
-    padding: 12px;
-    border: none;
+    padding: 10px;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -521,9 +518,9 @@ body {
 #registration-form input,
 #registration-form textarea {
     width: 100%;
-    padding: 10px;
-    margin: 6px 0;
-    border: none;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -557,8 +554,8 @@ body {
 
 .registration-card {
     background: #1a1a1a;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -568,31 +565,31 @@ body {
     font-weight: 600;
     color: #ffffff;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     text-transform: uppercase;
 }
 
 .registration-card p {
     font-size: 14px;
     color: #d1d5db;
-    margin: 4px 0;
+    margin: 3px 0;
 }
 
 /* Форма сетки */
 #bracket-form {
     background: #1a1a1a;
-    padding: 16px;
+    padding: 10px;
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 #bracket-form select,
 #bracket-form input {
     width: 100%;
-    padding: 10px;
-    margin: 6px 0;
-    border: none;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -616,35 +613,35 @@ body {
 }
 
 .bracket-round {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .bracket-round h3 {
     font-size: 16px;
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .bracket-match {
     background: #1a1a1a;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .bracket-match p {
-    margin: 4px 0;
+    margin: 3px 0;
     font-size: 14px;
     color: #d1d5db;
 }
 
 .bracket-match input {
     width: 100%;
-    padding: 10px;
-    margin: 6px 0;
-    border: none;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -672,7 +669,7 @@ body {
     display: flex;
     justify-content: space-around;
     background: #0f0f0f;
-    padding: 12px 0;
+    padding: 10px 0;
     border-top: 1px solid #262626;
     position: fixed;
     bottom: 0;
@@ -725,8 +722,8 @@ body {
     padding: 20px;
     border-radius: 12px;
     text-align: center;
-    max-width: 320px;
-    width: 100%;
+    max-width: 300px;
+    width: 90%;
     color: #e6e6e6;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -734,8 +731,8 @@ body {
 .modal-content input {
     width: 100%;
     padding: 10px;
-    margin: 12px 0;
-    border: none;
+    margin: 10px 0;
+    border: 1px solid #333;
     border-radius: 8px;
     background: #262626;
     color: #e6e6e6;
@@ -743,7 +740,7 @@ body {
 }
 
 .modal-content button {
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: #8b5cf6;
     color: #ffffff;
     border: none;
@@ -765,7 +762,7 @@ body {
 }
 
 .delete-registration-btn {
-    padding: 6 Eldest child: 6px 12px;
+    padding: 6px 12px;
     background: #ef4444;
     color: #ffffff;
     border: none;
