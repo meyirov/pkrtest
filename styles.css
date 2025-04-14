@@ -491,11 +491,13 @@ body {
 /* Вкладки турнира */
 .tournament-tabs {
     display: flex;
-    gap: 10px;
+    justify-content: space-between; /* Равномерное распределение кнопок */
+    width: 100%; /* Занимает всю ширину контейнера */
     margin-bottom: 10px;
 }
 
 .tab-btn {
+    flex: 1; /* Каждая кнопка занимает равное пространство */
     padding: 8px 16px;
     background: #1a1a1a;
     color: #e6e6e6;
@@ -505,6 +507,16 @@ body {
     font-size: 14px;
     font-weight: 600;
     transition: background 0.2s ease, color 0.2s ease;
+    margin: 0 5px; /* Небольшой отступ между кнопками */
+    text-align: center; /* Текст по центру кнопки */
+}
+
+.tab-btn:first-child {
+    margin-left: 0; /* Убираем отступ слева у первой кнопки */
+}
+
+.tab-btn:last-child {
+    margin-right: 0; /* Убираем отступ справа у последней кнопки */
 }
 
 .tab-btn:hover {
