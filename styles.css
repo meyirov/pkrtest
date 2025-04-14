@@ -313,13 +313,63 @@ body {
     font-size: 14px;
     font-weight: 600;
     transition: background 0.2s ease, transform 0.2s ease;
-    display: block;
+    width: 100%; /* Растянуть на всю ширину */
     margin: 10px 0;
+    text-align: center;
 }
 
 #create-tournament-btn:hover {
     background: #a78bfa;
-    transform: scale(1.05);
+    transform: scale(1.02); /* Меньший масштаб, чтобы не ломать layout */
+}
+
+/* Форма создания турнира */
+#create-tournament-form {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#create-tournament-form input,
+#create-tournament-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
+    font-size: 14px;
+}
+
+#create-tournament-form textarea {
+    height: 80px;
+    resize: none;
+}
+
+#create-tournament-form input:focus,
+#create-tournament-form textarea:focus {
+    outline: none;
+    background: #303030;
+}
+
+#create-tournament-form button {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+    margin-top: 10px;
+}
+
+#create-tournament-form button:hover {
+    background: #a78bfa;
 }
 
 /* Карточка турнира */
@@ -397,10 +447,10 @@ body {
     margin: 3px 0;
     font-size: 14px;
     color: #d1d5db;
-    white-space: nowrap; /* Не переносить текст */
-    overflow: hidden; /* Скрыть переполнение */
-    text-overflow: ellipsis; /* Добавить многоточие */
-    max-width: 100%; /* Ограничить ширину */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 #tournament-description {
