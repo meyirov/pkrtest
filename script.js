@@ -16,7 +16,11 @@ let currentTournamentId = null;
 let isPostsLoaded = false;
 let isLoadingMore = false; // Флаг для предотвращения множественных загрузок
 let newPostsCount = 0; // Счётчик новых постов для кнопки "Новые посты"
-let channel = null; // Для управления Realtime-подпиской
+let channel = null; // Для управления Realtime-подпиской на посты
+let commentChannels = new Map(); // Для управления Realtime-подписками на комментарии
+let commentsCache = new Map(); // Кэш комментариев по postId
+let lastCommentIds = new Map(); // Последний ID комментария для каждого поста
+let newCommentsCount = new Map(); // Счётчик новых комментариев для каждого поста
 
 async function supabaseFetch(endpoint, method, body = null, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -105,6 +109,25 @@ function debounce(func, wait) {
     };
 }
 
+function throttle(func, wait) {
+    let timeout = null;
+    let lastCall = 0;
+    return function (...args) {
+        const now = Date.now();
+        const remaining = wait - (now - lastCall);
+        if (remaining <= 0) {
+            lastCall = now;
+            func.apply(this, args);
+        } else if (!timeout) {
+            timeout = setTimeout(() => {
+                lastCall = Date.now();
+                timeout = null;
+                func.apply(this, args);
+            }, remaining);
+        }
+    };
+}
+
 buttons.forEach(button => {
     button.addEventListener('click', () => {
         buttons.forEach(btn => btn.classList.remove('active'));
@@ -170,12 +193,11 @@ submitPost.addEventListener('click', async () => {
     try {
         const newPost = await supabaseFetch('posts', 'POST', post);
         postText.value = '';
-        // Добавляем пост в кэш только если его там нет
         if (!postsCache.some(p => p.id === newPost[0].id)) {
             postsCache.unshift(newPost[0]);
             sortPostsCache();
             if (isUserAtTop()) {
-                renderNewPost(newPost[0], true); // Добавляем пост вверху
+                renderNewPost(newPost[0], true);
             } else {
                 newPostsCount++;
                 newPostsBtn.style.display = 'block';
@@ -217,7 +239,6 @@ async function loadPosts() {
         loadingIndicator.style.display = 'none';
     }
 
-    // Добавляем бесконечную прокрутку
     setupInfiniteScroll();
 }
 
@@ -262,7 +283,6 @@ async function loadNewPosts() {
 }
 
 function subscribeToNewPosts() {
-    // Удаляем старую подписку, если она существует
     if (channel) {
         supabaseClient.removeChannel(channel);
     }
@@ -295,16 +315,16 @@ function subscribeToNewPosts() {
 
 function isUserAtTop() {
     const feedSection = document.getElementById('feed');
-    return feedSection.scrollTop <= 50; // Пользователь вверху, если прокрутка меньше 50px
+    return feedSection.scrollTop <= 50;
 }
 
 function setupInfiniteScroll() {
     const feedSection = document.getElementById('feed');
-    feedSection.removeEventListener('scroll', debouncedLoadMorePosts); // Удаляем старый слушатель
-    feedSection.addEventListener('scroll', debouncedLoadMorePosts);
+    feedSection.removeEventListener('scroll', throttledLoadMorePosts);
+    feedSection.addEventListener('scroll', throttledLoadMorePosts);
 }
 
-const debouncedLoadMorePosts = debounce(() => {
+const throttledLoadMorePosts = throttle(() => {
     const feedSection = document.getElementById('feed');
     if (feedSection.scrollHeight - feedSection.scrollTop <= feedSection.clientHeight + 100) {
         loadMorePosts();
@@ -312,13 +332,13 @@ const debouncedLoadMorePosts = debounce(() => {
 }, 300);
 
 function sortPostsCache() {
-    postsCache.sort((a, b) => b.id - a.id); // Сортировка по id (новые посты вверху)
+    postsCache.sort((a, b) => b.id - a.id);
 }
 
 function renderPosts() {
     postsDiv.innerHTML = '';
     for (const post of postsCache) {
-        renderNewPost(post, false); // Используем renderNewPost вместо renderPost
+        renderNewPost(post, false);
     }
 }
 
@@ -355,7 +375,8 @@ function renderNewPost(post, prepend = false) {
             <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
         </div>
         <div class="comment-section" id="comments-${post.id}" style="display: none;">
-            <div class="comment-list" id="comment-list-${post.id}"></div>
+            <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
+            <div class="comment-list" id="comment-list-${post.id}" style="max-height: 200px; overflow-y: auto;"></div>
             <div class="comment-form">
                 <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий..."></textarea>
                 <button onclick="addComment(${post.id})">Отправить</button>
@@ -363,14 +384,14 @@ function renderNewPost(post, prepend = false) {
         </div>
     `;
 
-    if (prepend) {
-        postsDiv.prepend(postDiv);
-    } else {
-        postsDiv.appendChild(postDiv);
-    }
-
-    // Загружаем реакции и комментарии асинхронно
-    loadReactionsAndComments(post.id);
+    requestAnimationFrame(() => {
+        if (prepend) {
+            postsDiv.prepend(postDiv);
+        } else {
+            postsDiv.appendChild(postDiv);
+        }
+        loadReactionsAndComments(post.id);
+    });
 }
 
 async function renderMorePosts(newPosts) {
@@ -401,7 +422,8 @@ async function renderMorePosts(newPosts) {
                 <button class="comment-toggle-btn" onclick="toggleComments(${post.id})">💬 Комментарии (0)</button>
             </div>
             <div class="comment-section" id="comments-${post.id}" style="display: none;">
-                <div class="comment-list" id="comment-list-${post.id}"></div>
+                <button id="new-comments-btn-${post.id}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
+                <div class="comment-list" id="comment-list-${post.id}" style="max-height: 200px; overflow-y: auto;"></div>
                 <div class="comment-form">
                     <textarea class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий..."></textarea>
                     <button onclick="addComment(${post.id})">Отправить</button>
@@ -409,10 +431,10 @@ async function renderMorePosts(newPosts) {
             </div>
         `;
 
-        postsDiv.appendChild(postDiv);
-
-        // Загружаем реакции и комментарии асинхронно
-        loadReactionsAndComments(post.id);
+        requestAnimationFrame(() => {
+            postsDiv.appendChild(postDiv);
+            loadReactionsAndComments(post.id);
+        });
     }
 }
 
@@ -442,6 +464,8 @@ async function loadReactionsAndComments(postId) {
             if (comments) {
                 await renderComments(postId, comments);
             }
+
+            setupCommentInfiniteScroll(postId);
         }
     } catch (error) {
         console.error('Error loading reactions and comments:', error);
@@ -491,7 +515,8 @@ async function updatePost(postId) {
             <button class="comment-toggle-btn" onclick="toggleComments(${postId})">💬 Комментарии (${commentCount})</button>
         </div>
         <div class="comment-section" id="comments-${postId}" style="display: none;">
-            <div class="comment-list" id="comment-list-${postId}"></div>
+            <button id="new-comments-btn-${postId}" class="new-posts-btn" style="display: none;">Новые комментарии</button>
+            <div class="comment-list" id="comment-list-${postId}" style="max-height: 200px; overflow-y: auto;"></div>
             <div class="comment-form">
                 <textarea class="comment-input" id="comment-input-${postId}" placeholder="Написать комментарий..."></textarea>
                 <button onclick="addComment(${postId})">Отправить</button>
@@ -502,6 +527,8 @@ async function updatePost(postId) {
     if (comments) {
         await renderComments(postId, comments);
     }
+
+    setupCommentInfiniteScroll(postId);
 }
 
 function getTimeAgo(date) {
@@ -559,13 +586,163 @@ async function toggleReaction(postId, type) {
     }
 }
 
+// Новые функции для комментариев
 async function loadComments(postId) {
     try {
-        const comments = await supabaseFetch(`comments?post_id=eq.${postId}&order=timestamp.asc`, 'GET');
-        return comments || [];
+        // Инициализируем кэш для этого поста, если его нет
+        if (!commentsCache.has(postId)) {
+            commentsCache.set(postId, []);
+            lastCommentIds.set(postId, null);
+            newCommentsCount.set(postId, 0);
+        }
+
+        // Загружаем первые 10 комментариев
+        const comments = await supabaseFetch(`comments?post_id=eq.${postId}&order=id.asc&limit=10`, 'GET');
+        if (comments && comments.length > 0) {
+            const currentComments = commentsCache.get(postId);
+            const newComments = comments.filter(comment => !currentComments.some(c => c.id === comment.id));
+            commentsCache.set(postId, [...newComments, ...currentComments]);
+            sortCommentsCache(postId);
+            if (newComments.length > 0) {
+                lastCommentIds.set(postId, commentsCache.get(postId)[commentsCache.get(postId).length - 1].id);
+            }
+        }
+        return commentsCache.get(postId);
     } catch (error) {
         console.error('Error loading comments:', error);
         return [];
+    }
+}
+
+async function loadMoreComments(postId) {
+    const commentList = document.getElementById(`comment-list-${postId}`);
+    if (!commentList || commentList.dataset.isLoadingMore === 'true') return;
+
+    commentList.dataset.isLoadingMore = 'true';
+    const oldestCommentId = commentsCache.get(postId).length > 0 ? commentsCache.get(postId)[0].id : null;
+
+    try {
+        const moreComments = await supabaseFetch(`comments?post_id=eq.${postId}&id=lt.${oldestCommentId}&order=id.asc&limit=10`, 'GET');
+        if (moreComments && moreComments.length > 0) {
+            const currentComments = commentsCache.get(postId);
+            const newComments = moreComments.filter(comment => !currentComments.some(c => c.id === comment.id));
+            if (newComments.length > 0) {
+                commentsCache.set(postId, [...newComments, ...currentComments]);
+                sortCommentsCache(postId);
+                renderMoreComments(postId, newComments);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading more comments:', error);
+    } finally {
+        commentList.dataset.isLoadingMore = 'false';
+    }
+}
+
+async function loadNewComments(postId) {
+    const lastCommentId = lastCommentIds.get(postId);
+    if (!lastCommentId) return;
+
+    try {
+        const newComments = await supabaseFetch(`comments?post_id=eq.${postId}&id=gt.${lastCommentId}&order=id.asc`, 'GET');
+        if (newComments && newComments.length > 0) {
+            const currentComments = commentsCache.get(postId);
+            const uniqueNewComments = newComments.filter(comment => !currentComments.some(c => c.id === comment.id));
+            if (uniqueNewComments.length > 0) {
+                commentsCache.set(postId, [...currentComments, ...uniqueNewComments]);
+                sortCommentsCache(postId);
+                renderNewComments(postId, uniqueNewComments, true);
+                lastCommentIds.set(postId, commentsCache.get(postId)[commentsCache.get(postId).length - 1].id);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading new comments:', error);
+    }
+}
+
+function subscribeToNewComments(postId) {
+    // Удаляем старую подписку, если она существует
+    if (commentChannels.has(postId)) {
+        supabaseClient.removeChannel(commentChannels.get(postId));
+    }
+
+    const channel = supabaseClient
+        .channel(`comments-channel-${postId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, (payload) => {
+            const newComment = payload.new;
+            const currentComments = commentsCache.get(postId) || [];
+            if (!currentComments.some(comment => comment.id === newComment.id)) {
+                commentsCache.set(postId, [...currentComments, newComment]);
+                sortCommentsCache(postId);
+                if (isUserAtBottom(postId)) {
+                    renderNewComment(postId, newComment, true);
+                    lastCommentIds.set(postId, commentsCache.get(postId)[commentsCache.get(postId).length - 1].id);
+                } else {
+                    const currentCount = newCommentsCount.get(postId) || 0;
+                    newCommentsCount.set(postId, currentCount + 1);
+                    const newCommentsBtn = document.getElementById(`new-comments-btn-${postId}`);
+                    if (newCommentsBtn) {
+                        newCommentsBtn.style.display = 'block';
+                        newCommentsBtn.classList.add('visible');
+                    }
+                }
+            }
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log(`Subscribed to comments channel for post ${postId}`);
+            } else {
+                console.error(`Failed to subscribe to comments channel for post ${postId}:`, status);
+            }
+        });
+
+    commentChannels.set(postId, channel);
+}
+
+function isUserAtBottom(postId) {
+    const commentList = document.getElementById(`comment-list-${postId}`);
+    if (!commentList) return false;
+    return commentList.scrollHeight - commentList.scrollTop <= commentList.clientHeight + 50;
+}
+
+function setupCommentInfiniteScroll(postId) {
+    const commentList = document.getElementById(`comment-list-${postId}`);
+    if (!commentList) return;
+
+    // Удаляем старую подписку на комментарии
+    if (commentChannels.has(postId)) {
+        supabaseClient.removeChannel(commentChannels.get(postId));
+        commentChannels.delete(postId);
+    }
+
+    const throttledLoadMoreComments = throttle(() => {
+        if (commentList.scrollTop <= 50) {
+            loadMoreComments(postId);
+        }
+    }, 300);
+
+    commentList.removeEventListener('scroll', throttledLoadMoreComments);
+    commentList.addEventListener('scroll', throttledLoadMoreComments);
+
+    // Подписываемся на новые комментарии
+    subscribeToNewComments(postId);
+
+    // Добавляем обработчик для кнопки "Новые комментарии"
+    const newCommentsBtn = document.getElementById(`new-comments-btn-${postId}`);
+    if (newCommentsBtn) {
+        newCommentsBtn.onclick = () => {
+            loadNewComments(postId);
+            newCommentsBtn.style.display = 'none';
+            newCommentsCount.set(postId, 0);
+        };
+    }
+}
+
+function sortCommentsCache(postId) {
+    const comments = commentsCache.get(postId);
+    if (comments) {
+        comments.sort((a, b) => a.id - b.id); // Сортировка по id (старые комментарии вверху)
+        commentsCache.set(postId, comments);
     }
 }
 
@@ -574,6 +751,50 @@ async function renderComments(postId, comments) {
     if (!commentList) return;
     commentList.innerHTML = '';
     comments.forEach(comment => {
+        renderNewComment(postId, comment, false);
+    });
+}
+
+async function renderNewComments(postId, newComments, append = false) {
+    for (const comment of newComments) {
+        renderNewComment(postId, comment, append);
+    }
+}
+
+function renderNewComment(postId, comment, append = false) {
+    const commentList = document.getElementById(`comment-list-${postId}`);
+    if (!commentList) return;
+
+    const commentDiv = document.createElement('div');
+    commentDiv.classList.add('comment');
+    const [userInfo, ...contentParts] = comment.text.split(':\n');
+    const [fullname, username] = userInfo.split(' (@');
+    const cleanUsername = username ? username.replace(')', '') : '';
+    const content = contentParts.join(':\n');
+    commentDiv.innerHTML = `
+        <div class="comment-user">
+            <strong>${fullname}</strong> <span>@${cleanUsername}</span>
+        </div>
+        <div class="comment-content">${content}</div>
+    `;
+
+    requestAnimationFrame(() => {
+        if (append) {
+            commentList.appendChild(commentDiv);
+            if (isUserAtBottom(postId)) {
+                commentList.scrollTop = commentList.scrollHeight;
+            }
+        } else {
+            commentList.prepend(commentDiv);
+        }
+    });
+}
+
+async function renderMoreComments(postId, newComments) {
+    for (const comment of newComments) {
+        const commentList = document.getElementById(`comment-list-${postId}`);
+        if (!commentList) return;
+
         const commentDiv = document.createElement('div');
         commentDiv.classList.add('comment');
         const [userInfo, ...contentParts] = comment.text.split(':\n');
@@ -586,8 +807,11 @@ async function renderComments(postId, comments) {
             </div>
             <div class="comment-content">${content}</div>
         `;
-        commentList.appendChild(commentDiv);
-    });
+        
+        requestAnimationFrame(() => {
+            commentList.prepend(commentDiv);
+        });
+    }
 }
 
 async function addComment(postId) {
@@ -618,8 +842,29 @@ async function addComment(postId) {
             timestamp: new Date().toISOString()
         };
 
-        await supabaseFetch('comments', 'POST', comment);
+        const newComment = await supabaseFetch('comments', 'POST', comment);
         commentInput.value = '';
+
+        // Добавляем комментарий в кэш
+        const currentComments = commentsCache.get(postId) || [];
+        if (!currentComments.some(c => c.id === newComment[0].id)) {
+            commentsCache.set(postId, [...currentComments, newComment[0]]);
+            sortCommentsCache(postId);
+            if (isUserAtBottom(postId)) {
+                renderNewComment(postId, newComment[0], true);
+                lastCommentIds.set(postId, commentsCache.get(postId)[commentsCache.get(postId).length - 1].id);
+            } else {
+                const currentCount = newCommentsCount.get(postId) || 0;
+                newCommentsCount.set(postId, currentCount + 1);
+                const newCommentsBtn = document.getElementById(`new-comments-btn-${postId}`);
+                if (newCommentsBtn) {
+                    newCommentsBtn.style.display = 'block';
+                    newCommentsBtn.classList.add('visible');
+                }
+            }
+        }
+
+        // Обновляем счётчик комментариев
         await updatePost(postId);
     } catch (error) {
         console.error('Error adding comment:', error);
@@ -630,7 +875,20 @@ async function addComment(postId) {
 function toggleComments(postId) {
     const commentSection = document.getElementById(`comments-${postId}`);
     if (commentSection) {
-        commentSection.style.display = commentSection.style.display === 'none' ? 'block' : 'none';
+        const isVisible = commentSection.style.display === 'block';
+        commentSection.style.display = isVisible ? 'none' : 'block';
+
+        if (!isVisible) {
+            // Загружаем комментарии и подписываемся на обновления
+            loadComments(postId).then(comments => renderComments(postId, comments));
+            setupCommentInfiniteScroll(postId);
+        } else {
+            // Отписываемся от обновлений
+            if (commentChannels.has(postId)) {
+                supabaseClient.removeChannel(commentChannels.get(postId));
+                commentChannels.delete(postId);
+            }
+        }
     }
 }
 
@@ -870,6 +1128,9 @@ function initRegistration() {
     };
 
     submitRegistrationBtn.addEventListener('click', async () => {
+        // Отключаем кнопку, чтобы предотвратить повторные клики
+        submitRegistrationBtn.disabled = true;
+
         const registration = {
             tournament_id: currentTournamentId,
             faction_name: document.getElementById('reg-faction-name').value,
@@ -884,10 +1145,12 @@ function initRegistration() {
 
         if (!registration.faction_name) {
             alert('Пожалуйста, укажите название фракции!');
+            submitRegistrationBtn.disabled = false;
             return;
         }
         if (!registration.club) {
             alert('Пожалуйста, укажите название клуба!');
+            submitRegistrationBtn.disabled = false;
             return;
         }
 
@@ -906,6 +1169,8 @@ function initRegistration() {
         } catch (error) {
             console.error('Error saving registration:', error);
             alert('Ошибка: ' + error.message);
+        } finally {
+            submitRegistrationBtn.disabled = false;
         }
     });
 }
@@ -916,10 +1181,20 @@ async function loadRegistrations(tournamentId, isCreator) {
         const registrationList = document.getElementById('registration-list');
         registrationList.innerHTML = '';
 
-        if (registrations && registrations.length > 0) {
-            registrations.forEach(reg => {
+        // Удаляем возможные дубли на клиентской стороне
+        const seen = new Set();
+        const uniqueRegistrations = registrations.filter(reg => {
+            const key = `${reg.tournament_id}|${reg.faction_name}|${reg.club}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        if (uniqueRegistrations.length > 0) {
+            uniqueRegistrations.forEach(reg => {
                 const regCard = document.createElement('div');
                 regCard.classList.add('registration-card');
+                regCard.setAttribute('data-registration-id', reg.id);
                 regCard.innerHTML = `
                     <strong>${reg.faction_name || 'Не указано'}</strong>
                     <p>Клуб: ${reg.club || 'Не указано'}</p>
