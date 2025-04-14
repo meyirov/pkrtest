@@ -1,186 +1,125 @@
-/* Подключаем шрифт Inter через Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Сброс стилей и базовые настройки */
+/* Общие стили */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #f8fafc;
-    color: #0f172a;
-    line-height: 1.5;
-    overflow-x: hidden;
+    background: #0f0f0f;
+    color: #e6e6e6;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Контейнер приложения */
-#app-container {
+/* Контейнер */
+.container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     max-width: 600px;
     margin: 0 auto;
+}
+
+/* Основной контент */
+.main-content {
+    flex: 1;
     padding: 16px;
-    padding-bottom: 80px; /* Отступ для фиксированной навигации */
+    padding-bottom: 80px;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%);
 }
 
-/* Модальное окно регистрации */
-#registration-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-#registration-modal .modal-content {
-    background-color: #ffffff;
-    padding: 24px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.3s ease-in-out;
-}
-
-#registration-modal input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-#registration-modal button {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-#registration-modal button:hover {
-    background-color: #8b5cf6;
-}
-
-#registration-modal button:active {
-    transform: scale(0.98);
-}
-
-/* Навигационная панель */
-.nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #ffffff;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-around;
-    padding: 8px 0;
-    z-index: 100;
-}
-
-.nav-btn {
-    background: none;
-    border: none;
-    padding: 12px;
-    font-size: 14px;
-    color: #64748b;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.nav-btn.active {
-    color: #6d28d9;
-    font-weight: 600;
-}
-
-.nav-btn:hover {
-    color: #8b5cf6;
-}
-
-/* Секции */
 .content {
     display: none;
-    padding-top: 16px;
 }
 
 .content.active {
     display: block;
-    animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Лента */
-#feed {
-    overflow-y: auto;
-    max-height: calc(100vh - 80px);
-}
-
+/* Новый пост */
 #new-post {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: #1a1a1a;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-#post-text {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    resize: none;
-    font-size: 16px;
-    margin-bottom: 12px;
+#new-post:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-#submit-post {
+#new-post textarea {
     width: 100%;
+    height: 80px;
     padding: 12px;
-    background-color: #6d28d9;
-    color: #ffffff;
     border: none;
     border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
+    resize: none;
     font-size: 16px;
-    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+#new-post textarea:focus {
+    outline: none;
+    background: #303030;
+}
+
+.new-post-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.new-post-icons {
+    flex: 1;
+}
+
+#new-post button {
+    padding: 8px 20px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 24px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
-#submit-post:hover {
-    background-color: #8b5cf6;
+#new-post button:hover {
+    background: #a78bfa;
+    transform: scale(1.05);
 }
 
-#submit-post:active {
-    transform: scale(0.98);
-}
-
-#posts-loading {
-    text-align: center;
-    padding: 16px;
-    color: #64748b;
+/* Посты */
+#posts {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
 }
 
 .post {
-    background-color: #ffffff;
+    background: #1a1a1a;
     padding: 16px;
-    border-radius: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    animation: slideUp 0.3s ease-in-out;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.post:hover {
+    transform: translateY(-2px);
 }
 
 .post-header {
@@ -192,179 +131,205 @@ body {
 
 .post-user {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .post-user strong {
     font-weight: 600;
     font-size: 16px;
+    color: #ffffff;
 }
 
 .post-user span {
+    color: #6b7280;
     font-size: 14px;
-    color: #64748b;
 }
 
 .post-time {
-    font-size: 14px;
-    color: #64748b;
+    color: #6b7280;
+    font-size: 12px;
 }
 
 .post-content {
-    font-size: 16px;
-    margin-bottom: 12px;
-    word-wrap: break-word;
+    margin-top: 8px;
+    font-size: 15px;
+    color: #d1d5db;
 }
 
 .post-actions {
     display: flex;
     gap: 12px;
+    margin-top: 12px;
 }
 
-.reaction-btn, .comment-toggle-btn {
-    background: none;
+.reaction-btn {
+    background: #262626;
+    color: #e6e6e6;
     border: none;
-    font-size: 14px;
-    color: #64748b;
+    border-radius: 8px;
+    padding: 6px 12px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    font-size: 14px;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-.reaction-btn.active, .reaction-btn:hover, .comment-toggle-btn:hover {
-    color: #6d28d9;
+.reaction-btn:hover {
+    background: #404040;
 }
 
+.reaction-btn.active {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+.reaction-btn.active:hover {
+    background: #a78bfa;
+}
+
+.comment-toggle-btn {
+    background: #262626;
+    color: #e6e6e6;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.comment-toggle-btn:hover {
+    background: #404040;
+}
+
+/* Комментарии */
 .comment-section {
-    margin-top: 16px;
-    padding: 16px;
-    background-color: #f1f5f9;
-    border-radius: 12px;
-    animation: fadeIn 0.3s ease-in-out;
+    margin-top: 12px;
+    padding: 12px;
+    background: #1f1f1f;
+    border-radius: 8px;
 }
 
 .comment-list {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .comment {
-    background-color: #ffffff;
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    animation: slideUp 0.3s ease-in-out;
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
 }
 
 .comment-user {
-    display: flex;
-    gap: 8px;
+    font-size: 14px;
     margin-bottom: 4px;
 }
 
 .comment-user strong {
     font-weight: 600;
-    font-size: 14px;
+    color: #ffffff;
 }
 
 .comment-user span {
-    font-size: 14px;
-    color: #64748b;
+    color: #6b7280;
 }
 
 .comment-content {
     font-size: 14px;
+    color: #d1d5db;
 }
 
 .comment-form {
     display: flex;
-    gap: 12px;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .comment-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
+    width: 100%;
+    height: 40px;
+    padding: 8px;
+    border: none;
     border-radius: 8px;
-    font-size: 14px;
+    background: #262626;
+    color: #e6e6e6;
     resize: none;
+    font-size: 14px;
+}
+
+.comment-input:focus {
+    outline: none;
+    background: #303030;
 }
 
 .comment-form button {
-    padding: 10px 16px;
-    background-color: #6d28d9;
+    padding: 8px 16px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
+    cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background 0.2s ease;
 }
 
 .comment-form button:hover {
-    background-color: #8b5cf6;
+    background: #a78bfa;
 }
 
-.comment-form button:active {
-    transform: scale(0.98);
-}
-
+/* Кнопка "Новые посты" */
 .new-posts-btn {
-    display: block;
-    margin: 0 auto 16px;
-    padding: 10px 16px;
-    background-color: #6d28d9;
+    display: none;
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 24px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.3s ease;
+    margin: 12px auto;
+    width: fit-content;
+    font-weight: 600;
+    font-size: 14px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
     opacity: 0;
+    transform: translateY(-10px);
 }
 
 .new-posts-btn.visible {
     opacity: 1;
+    transform: translateY(0);
 }
 
-.new-posts-btn:hover {
-    background-color: #8b5cf6;
-}
-
-.new-posts-btn:active {
-    transform: scale(0.98);
-}
-
-/* Турниры */
-#tournament-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
+/* Карточка турнира */
 .tournament-card {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     display: flex;
-    gap: 16px;
     align-items: center;
+    background: #1a1a1a;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    transition: transform 0.1s ease;
-    animation: slideUp 0.3s ease-in-out;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .tournament-card:hover {
+    background: #262626;
     transform: translateY(-2px);
 }
 
 .tournament-logo {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
+    margin-right: 12px;
+    border-radius: 8px;
     object-fit: cover;
-    border-radius: 12px;
+    background: #262626;
 }
 
 .tournament-info {
@@ -372,556 +337,446 @@ body {
 }
 
 .tournament-info strong {
-    font-weight: 600;
     font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    display: block;
+    margin-bottom: 4px;
 }
 
 .tournament-info span {
-    display: block;
     font-size: 14px;
-    color: #64748b;
+    color: #6b7280;
+    display: block;
+    line-height: 1.4;
 }
 
-#create-tournament-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-#create-tournament-btn:hover {
-    background-color: #8b5cf6;
-}
-
-#create-tournament-btn:active {
-    transform: scale(0.98);
-}
-
-#create-tournament-form {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
-}
-
-#create-tournament-form.form-hidden {
-    display: none;
-}
-
-#create-tournament-form input,
-#create-tournament-form textarea {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-#submit-tournament {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-#submit-tournament:hover {
-    background-color: #8b5cf6;
-}
-
-#submit-tournament:active {
-    transform: scale(0.98);
-}
-
-/* Детали турнира */
-#tournament-details {
-    padding-bottom: 80px; /* Отступ для навигации */
-}
-
+/* Заголовок турнира */
 #tournament-header {
-    background-color: #ffffff;
+    background: #1a1a1a;
     padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 #tournament-header img {
     width: 100%;
-    max-width: 200px;
-    border-radius: 12px;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
     margin-bottom: 12px;
 }
 
 #tournament-header strong {
-    display: block;
+    font-size: 18px;
     font-weight: 600;
-    font-size: 20px;
+    color: #ffffff;
+    display: block;
     margin-bottom: 8px;
 }
 
 #tournament-header p {
+    margin: 4px 0;
     font-size: 14px;
-    color: #64748b;
-    margin-bottom: 4px;
-}
-
-#tournament-header a {
-    color: #6d28d9;
-    text-decoration: none;
-}
-
-#tournament-header a:hover {
-    text-decoration: underline;
+    color: #d1d5db;
 }
 
 #tournament-description {
-    background-color: #ffffff;
+    background: #1a1a1a;
     padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-#tournament-description.description-hidden {
+.description-hidden {
     display: none;
 }
 
 #toggle-description-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+    padding: 8px 16px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
     cursor: pointer;
-    margin-bottom: 16px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
 }
 
 #toggle-description-btn:hover {
-    background-color: #8b5cf6;
+    background: #a78bfa;
 }
 
-#toggle-description-btn:active {
-    transform: scale(0.98);
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: #333;
+    margin: 16px 0;
 }
 
-.tab-nav {
+/* Вкладки турнира */
+.tournament-tabs {
     display: flex;
-    gap: 16px;
+    gap: 8px;
     margin-bottom: 16px;
-    border-bottom: 1px solid #e2e8f0;
 }
 
-.tab-nav button {
-    background: none;
+.tab-btn {
+    padding: 8px 16px;
+    background: #1a1a1a;
+    color: #e6e6e6;
     border: none;
-    padding: 12px 16px;
-    font-size: 16px;
-    color: #64748b;
-    cursor: pointer;
-    transition: color 0.2s ease, border-bottom 0.2s ease;
-    border-bottom: 2px solid transparent;
-}
-
-.tab-nav button.active {
-    color: #6d28d9;
-    border-bottom: 2px solid #6d28d9;
-    font-weight: 600;
-}
-
-.tab-nav button:hover {
-    color: #8b5cf6;
-}
-
-#new-tournament-post {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-}
-
-#tournament-post-text {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    resize: none;
-    font-size: 16px;
-    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-#submit-tournament-post {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+.tab-btn:hover {
+    background: #262626;
+}
+
+.tab-btn.active {
+    background: #8b5cf6;
     color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-#submit-tournament-post:hover {
-    background-color: #8b5cf6;
-}
-
-#submit-tournament-post:active {
-    transform: scale(0.98);
-}
-
-#tournament-posts-list .post {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
-}
-
-#register-tournament-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-#register-tournament-btn:hover {
-    background-color: #8b5cf6;
-}
-
-#register-tournament-btn:active {
-    transform: scale(0.98);
-}
-
-#registration-form {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
-}
-
-#registration-form.form-hidden {
+.tab-content {
     display: none;
 }
 
-#registration-form input,
-#registration-form textarea {
-    width: 100%;
+.tab-content.active {
+    display: block;
+}
+
+/* Новый пост турнира */
+#new-tournament-post {
+    margin-bottom: 16px;
+    background: #1a1a1a;
     padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#new-tournament-post textarea {
+    width: 100%;
+    height: 80px;
+    padding: 12px;
+    border: none;
     border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
+    resize: none;
     font-size: 16px;
 }
 
-#submit-registration-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+#new-tournament-post textarea:focus {
+    outline: none;
+    background: #303030;
+}
+
+#new-tournament-post button {
+    padding: 8px 16px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+#new-tournament-post button:hover {
+    background: #a78bfa;
+}
+
+#tournament-posts-list .post-header strong {
     font-size: 16px;
     font-weight: 600;
+}
+
+/* Кнопка регистрации */
+#register-tournament-btn {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
 }
 
-#submit-registration-btn:hover {
-    background-color: #8b5cf6;
+#register-tournament-btn:hover {
+    background: #a78bfa;
 }
 
-#submit-registration-btn:active {
-    transform: scale(0.98);
+/* Форма регистрации */
+#registration-form input,
+#registration-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border: none;
+    border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
+    font-size: 14px;
 }
 
-#registration-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+#registration-form textarea {
+    height: 80px;
+    resize: none;
+}
+
+#registration-form button {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+#registration-form button:hover {
+    background: #a78bfa;
+}
+
+.form-hidden {
+    display: none;
 }
 
 .registration-card {
-    background-color: #ffffff;
+    background: #1a1a1a;
     padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    animation: slideUp 0.3s ease-in-out;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .registration-card strong {
-    font-weight: 600;
     font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
     display: block;
     margin-bottom: 8px;
+    text-transform: uppercase;
 }
 
 .registration-card p {
     font-size: 14px;
-    color: #64748b;
-    margin-bottom: 4px;
+    color: #d1d5db;
+    margin: 4px 0;
 }
 
-.delete-registration-btn {
-    width: 100%;
-    padding: 10px;
-    background-color: #ef4444;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 12px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.delete-registration-btn:hover {
-    background-color: #f87171;
-}
-
-.delete-registration-btn:active {
-    transform: scale(0.98);
-}
-
+/* Форма сетки */
 #bracket-form {
-    background-color: #ffffff;
+    background: #1a1a1a;
     padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
     margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 #bracket-form select,
 #bracket-form input {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    padding: 10px;
+    margin: 6px 0;
+    border: none;
     border-radius: 8px;
-    font-size: 16px;
+    background: #262626;
+    color: #e6e6e6;
+    font-size: 14px;
 }
 
-#generate-bracket-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+#bracket-form button {
+    padding: 8px 16px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
 }
 
-#generate-bracket-btn:hover {
-    background-color: #8b5cf6;
-}
-
-#generate-bracket-btn:active {
-    transform: scale(0.98);
+#bracket-form button:hover {
+    background: #a78bfa;
 }
 
 .bracket-round {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
 }
 
 .bracket-round h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: 12px;
+    color: #ffffff;
+    margin-bottom: 8px;
 }
 
 .bracket-match {
-    border-left: 4px solid #6d28d9;
-    padding-left: 12px;
+    background: #1a1a1a;
+    padding: 16px;
     margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .bracket-match p {
+    margin: 4px 0;
     font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.team-club {
-    color: #64748b;
+    color: #d1d5db;
 }
 
 .bracket-match input {
     width: 100%;
     padding: 10px;
-    margin-bottom: 8px;
-    border: 1px solid #e2e8f0;
+    margin: 6px 0;
+    border: none;
     border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
     font-size: 14px;
 }
 
 #publish-bracket-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+    padding: 8px 16px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
 }
 
 #publish-bracket-btn:hover {
-    background-color: #8b5cf6;
+    background: #a78bfa;
 }
 
-#publish-bracket-btn:active {
-    transform: scale(0.98);
+/* Навигация */
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    background: #0f0f0f;
+    padding: 12px 0;
+    border-top: 1px solid #262626;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
-/* Профиль */
-#profile {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
+.nav-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s ease;
 }
 
-#profile p {
-    font-size: 16px;
-    margin-bottom: 12px;
+.nav-btn span {
+    font-size: 24px;
 }
 
-#profile input {
+.nav-btn.active {
+    color: #8b5cf6;
+}
+
+.nav-btn:hover {
+    color: #a78bfa;
+}
+
+/* Модальное окно */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+    color: #e6e6e6;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 12px 0;
+    border: none;
     border-radius: 8px;
-    font-size: 16px;
+    background: #262626;
+    color: #e6e6e6;
+    font-size: 14px;
 }
 
-#update-profile {
-    width: 100%;
-    padding: 12px;
-    background-color: #6d28d9;
+.modal-content button {
+    padding: 10px 20px;
+    background: #8b5cf6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
 }
 
-#update-profile:hover {
-    background-color: #8b5cf6;
+.modal-content button:hover {
+    background: #a78bfa;
 }
 
-#update-profile:active {
-    transform: scale(0.98);
+.team-club {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 4px;
 }
 
-/* Рейтинг */
-#rating-list .post {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    margin-bottom: 16px;
-    animation: slideUp 0.3s ease-in-out;
+.delete-registration-btn {
+    padding: 6 Eldest child: 6px 12px;
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: background 0.2s ease;
 }
 
-/* Анимации */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Адаптивность */
-@media (max-width: 600px) {
-    #app-container {
-        padding: 12px;
-        padding-bottom: 70px;
-    }
-
-    .nav {
-        padding: 6px 0;
-    }
-
-    .nav-btn {
-        padding: 10px;
-        font-size: 12px;
-    }
-
-    .post, .comment, .tournament-card, .registration-card, .bracket-round {
-        padding: 12px;
-    }
-
-    .post-content, .comment-content {
-        font-size: 14px;
-    }
-
-    .post-user strong, .tournament-info strong, .registration-card strong {
-        font-size: 14px;
-    }
-
-    .post-user span, .tournament-info span, .registration-card p {
-        font-size: 12px;
-    }
+.delete-registration-btn:hover {
+    background: #dc2626;
 }
