@@ -17,10 +17,10 @@
     <!-- Модальное окно регистрации -->
     <div id="registration-modal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h2>Добро пожаловать!</h2>
-            <p>Пожалуйста, введите ваше имя для регистрации:</p>
+            <h2>Қош келдіңіздер!</h2>
+            <p>Өтінемін, тіркелу үшін аты жөніңізді енгізіңіз:</p>
             <input id="reg-fullname" type="text" placeholder="Имя и фамилия">
-            <button id="submit-profile-reg-btn">Зарегистрироваться</button>
+            <button id="submit-profile-reg-btn">Тіркелу</button>
         </div>
     </div>
 
@@ -29,51 +29,51 @@
         <div class="main-content">
             <section id="feed" class="content active">
                 <div id="new-post">
-                    <textarea id="post-text" placeholder="Что нового?"></textarea>
+                    <textarea id="post-text" placeholder="Не хабар?"></textarea>
                     <div class="new-post-actions">
                         <div class="new-post-icons"></div>
-                        <button id="submit-post">Твитнуть</button>
+                        <button id="submit-post">Пікір</button>
                     </div>
                 </div>
                 <div id="posts-loading" style="display: none; text-align: center; padding: 10px;">Загрузка...</div>
                 <div id="posts"></div>
             </section>
             <section id="tournaments" class="content">
-                <button id="create-tournament-btn">Создать турнир</button>
+                <button id="create-tournament-btn">Турнир тіркеу</button>
                 <div id="create-tournament-form" class="form-hidden">
-                    <input id="tournament-name" type="text" placeholder="Название турнира">
-                    <input id="tournament-date" type="text" placeholder="Дата (например, 10.04.2025)">
-                    <input id="tournament-logo" type="text" placeholder="Ссылка на логотип">
-                    <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
-                    <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
-                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
-                    <button id="submit-tournament">Создать</button>
+                    <input id="tournament-name" type="text" placeholder="Турнир аты">
+                    <input id="tournament-date" type="text" placeholder="Датасы (мысалы, 10.04.2025)">
+                    <input id="tournament-logo" type="text" placeholder="Логотипке сілтеме">
+                    <textarea id="tournament-desc" placeholder="Турнир туралы"></textarea>
+                    <input id="tournament-address" type="text" placeholder="2GIS сілтеме">
+                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (мысалы, 05.04.2025)">
+                    <button id="submit-tournament">Жариялау</button>
                 </div>
                 <div id="tournament-list"></div>
             </section>
             <section id="tournament-details" class="content">
                 <div id="tournament-header"></div>
                 <div id="tournament-description" class="description-hidden"></div>
-                <button id="toggle-description-btn">Развернуть описание</button>
+                <button id="toggle-description-btn">Кеңейту</button>
                 <hr class="section-divider">
                 <div id="tournament-future-content">
                     <div class="tournament-tabs">
-                        <button id="posts-tab" class="tab-btn active">Посты</button>
-                        <button id="registration-tab" class="tab-btn">Регистрация</button>
+                        <button id="posts-tab" class="tab-btn active">Хаблама</button>
+                        <button id="registration-tab" class="tab-btn">Тіркеу</button>
                         <button id="bracket-tab" class="tab-btn">Сетка</button>
                     </div>
                     <div id="tournament-posts" class="tab-content active"></div>
                     <div id="tournament-registration" class="tab-content">
-                        <button id="register-tournament-btn">Зарегистрироваться</button>
+                        <button id="register-tournament-btn">Тіркелу</button>
                         <div id="registration-form" class="form-hidden">
-                            <input id="reg-faction-name" type="text" placeholder="Название Фракции">
-                            <input id="reg-speaker1" type="text" placeholder="Имя и фамилия 1-го спикера">
-                            <input id="reg-speaker2" type="text" placeholder="Имя и фамилия 2-го спикера">
+                            <input id="reg-faction-name" type="text" placeholder="Фракция аты">
+                            <input id="reg-speaker1" type="text" placeholder="1 спикер АЖ">
+                            <input id="reg-speaker2" type="text" placeholder="2 спикер АЖ">
                             <input id="reg-club" type="text" placeholder="Клуб">
-                            <input id="reg-city" type="text" placeholder="Город">
-                            <input id="reg-contacts" type="text" placeholder="Контакты">
-                            <textarea id="reg-extra" placeholder="Дополнительно (достижения)"></textarea>
-                            <button id="submit-registration-btn">Отправить</button>
+                            <input id="reg-city" type="text" placeholder="Қала">
+                            <input id="reg-contacts" type="text" placeholder="Байланыс">
+                            <textarea id="reg-extra" placeholder="Жетістіктер (қосымша)"></textarea>
+                            <button id="submit-registration-btn">Тіркелу</button>
                         </div>
                         <div id="registration-list"></div>
                     </div>
@@ -84,21 +84,21 @@
                 <div id="rating-list"></div>
             </section>
             <section id="profile" class="content">
-                <h2>Профиль</h2>
+                <h2>Жеке кабинет</h2>
                 <p>Username: <span id="username"></span></p>
                 <input id="fullname" type="text" placeholder="Имя и фамилия">
-                <button id="update-profile">Изменить имя</button>
+                <button id="update-profile">АЖ өзгерту</button>
             </section>
             <section id="edu" class="content">
                 <h2>PKR EDU</h2>
-                <p>Обучающий контент скоро появится!</p>
+                <p>Ағарту контенті жақында!</p>
             </section>
         </div>
         <nav class="navbar">
             <button id="feed-btn" class="nav-btn active"><span>🏠</span> Лента</button>
-            <button id="tournaments-btn" class="nav-btn"><span>🏆</span> Турниры</button>
+            <button id="tournaments-btn" class="nav-btn"><span>🏆</span> Турнирлер</button>
             <button id="rating-btn" class="nav-btn"><span>⭐</span> Рейтинг</button>
-            <button id="profile-btn" class="nav-btn"><span>👤</span> Профиль</button>
+            <button id="profile-btn" class="nav-btn"><span>👤</span> Жеке кабинет</button>
             <button id="edu-btn" class="nav-btn"><span>📚</span> EDU</button>
         </nav>
     </div>
