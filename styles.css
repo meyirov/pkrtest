@@ -853,7 +853,7 @@ body {
 }
 
 /* Раздел профиля */
-.profile-section {
+#profile {
     background: #1a1a1a;
     padding: 10px;
     border-radius: 12px;
@@ -861,25 +861,25 @@ body {
     margin-bottom: 10px;
 }
 
-.profile-section h2 {
+#profile h2 {
     font-size: 18px;
     font-weight: 600;
     color: #ffffff;
     margin-bottom: 10px;
 }
 
-.profile-section .username {
+#profile p {
     font-size: 14px;
     color: #d1d5db;
     margin-bottom: 10px;
 }
 
-.profile-section .username span {
+#profile p span {
     color: #ffffff;
     font-weight: 600;
 }
 
-#user-name {
+#profile input[type="text"] {
     width: 100%;
     padding: 8px;
     margin: 5px 0;
@@ -890,12 +890,12 @@ body {
     font-size: 14px;
 }
 
-#user-name:focus {
+#profile input[type="text"]:focus {
     outline: none;
     background: #303030;
 }
 
-#change-name-btn {
+#profile button {
     padding: 8px 16px;
     background: #8b5cf6;
     color: #ffffff;
@@ -908,7 +908,7 @@ body {
     margin-top: 10px;
 }
 
-#change-name-btn:hover {
+#profile button:hover {
     background: #a78bfa;
     transform: scale(1.05);
 }
