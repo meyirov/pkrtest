@@ -313,14 +313,14 @@ body {
     font-size: 14px;
     font-weight: 600;
     transition: background 0.2s ease, transform 0.2s ease;
-    width: 100%; /* Растянуть на всю ширину */
+    width: 100%;
     margin: 10px 0;
     text-align: center;
 }
 
 #create-tournament-btn:hover {
     background: #a78bfa;
-    transform: scale(1.02); /* Меньший масштаб, чтобы не ломать layout */
+    transform: scale(1.02);
 }
 
 /* Форма создания турнира */
@@ -850,4 +850,65 @@ body {
 
 .delete-registration-btn:hover {
     background: #dc2626;
+}
+
+/* Раздел профиля */
+.profile-section {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 10px;
+}
+
+.profile-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.profile-section .username {
+    font-size: 14px;
+    color: #d1d5db;
+    margin-bottom: 10px;
+}
+
+.profile-section .username span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+#user-name {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #262626;
+    color: #e6e6e6;
+    font-size: 14px;
+}
+
+#user-name:focus {
+    outline: none;
+    background: #303030;
+}
+
+#change-name-btn {
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.2s ease;
+    margin-top: 10px;
+}
+
+#change-name-btn:hover {
+    background: #a78bfa;
+    transform: scale(1.05);
 }
