@@ -1404,9 +1404,9 @@ async function loadBracket(tournamentId) {
 const ratingList = document.getElementById('rating-list');
 const rating = [
     { name: 'Ахмет Байтұрсынов', points: 150 },
-    { name: 'Шәкәрім Құдайбердіұлы', points: 120 }
-    { name: 'Мағжан Жұмабаев', points: 110 }
-    { name: 'Жүсіпбек Аймауытов', points: 105 }
+    { name: 'Шәкәрім Құдайбердіұлы', points: 120 },
+    { name: 'Мағжан Жұмабаев', points: 110 },
+    { name: 'Жүсіпбек Аймауытов', points: 105 },
     { name: 'Міржақып Дулатов', points: 99 }
 ];
 
