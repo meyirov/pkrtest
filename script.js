@@ -1269,7 +1269,7 @@ async function generateBracket() {
         faction_name: reg.faction_name,
         club: reg.club
     }));
-    const positions = format === 'АПФ' ? ['Правительство', 'Оппозиция'] : ['Открывающая Правительство', 'Открывающая Оппозиция', 'Закрывающая Правительство', 'Закрывающая Оппозиция'];
+    const positions = format === 'АПФ' ? ['Правительство', 'Оппозиция'] : ['ОП', 'ОО', 'ЗП', 'ЗО'];
     const teamsPerMatch = format === 'АПФ' ? 2 : 4;
 
     const matches = [];
