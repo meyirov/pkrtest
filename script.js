@@ -1,4 +1,5 @@
-// Подключаем Supabase клиент
+console.log('script.js loaded, version: 2025-04-28');
+
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -11,16 +12,16 @@ const regFullname = document.getElementById('reg-fullname');
 const submitProfileRegBtn = document.getElementById('submit-profile-reg-btn');
 let userData = {};
 let postsCache = [];
-let lastPostId = null; // Для пагинации и отслеживания новых постов
+let lastPostId = null;
 let currentTournamentId = null;
 let isPostsLoaded = false;
-let isLoadingMore = false; // Флаг для предотвращения множественных загрузок
-let newPostsCount = 0; // Счётчик новых постов для кнопки "Новые посты"
-let channel = null; // Для управления Realtime-подпиской на посты
-let commentChannels = new Map(); // Для управления Realtime-подписками на комментарии
-let commentsCache = new Map(); // Кэш комментариев по postId
-let lastCommentIds = new Map(); // Последний ID комментария для каждого поста
-let newCommentsCount = new Map(); // Счётчик новых комментариев для каждого поста
+let isLoadingMore = false;
+let newPostsCount = 0;
+let channel = null;
+let commentChannels = new Map();
+let commentsCache = new Map();
+let lastCommentIds = new Map();
+let newCommentsCount = new Map();
 
 async function supabaseFetch(endpoint, method, body = null, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -44,12 +45,13 @@ async function supabaseFetch(endpoint, method, body = null, retries = 3) {
         } catch (error) {
             if (attempt === retries) throw error;
             console.warn(`Retrying request (${attempt}/${retries})...`, error);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Экспоненциальная задержка
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
     }
 }
 
 async function checkProfile() {
+    console.log('checkProfile started');
     const telegramUsername = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.username : null;
     if (!telegramUsername) {
         alert('Telegram username недоступен! Укажите username в настройках Telegram.');
@@ -59,6 +61,7 @@ async function checkProfile() {
 
     try {
         const profiles = await supabaseFetch(`profiles?telegram_username=eq.${telegramUsername}`, 'GET');
+        console.log('Profiles fetched:', profiles);
         if (profiles && profiles.length > 0) {
             userData.fullname = profiles[0].fullname;
             showApp();
@@ -91,10 +94,13 @@ submitProfileRegBtn.addEventListener('click', async () => {
 });
 
 function showApp() {
+    console.log('showApp called, userData:', userData);
     appContainer.style.display = 'block';
     document.getElementById('username').textContent = userData.telegramUsername;
     document.getElementById('fullname').value = userData.fullname;
+    console.log('Calling loadPosts');
     loadPosts();
+    console.log('Calling subscribeToNewPosts');
     subscribeToNewPosts();
 }
 
@@ -159,6 +165,17 @@ newPostsBtn.addEventListener('click', () => {
 });
 document.getElementById('feed').prepend(newPostsBtn);
 
+const loadMoreBtn = document.createElement('button');
+loadMoreBtn.id = 'load-more-btn';
+loadMoreBtn.className = 'load-more-btn';
+loadMoreBtn.innerHTML = 'Загрузить ещё';
+loadMoreBtn.style.display = 'block'; // Принудительно показываем
+loadMoreBtn.addEventListener('click', () => {
+    console.log('Load more button clicked');
+    loadMorePosts();
+});
+postsDiv.appendChild(loadMoreBtn);
+
 submitPost.addEventListener('click', async () => {
     const postContent = postText.value.trim();
     if (!postContent) {
@@ -193,62 +210,100 @@ submitPost.addEventListener('click', async () => {
 });
 
 async function loadPosts() {
+    console.log('loadPosts started, isPostsLoaded:', isPostsLoaded);
     if (isPostsLoaded) {
+        console.log('Posts already loaded, rendering from cache');
         renderPosts();
         return;
     }
 
     const loadingIndicator = document.getElementById('posts-loading');
+    console.log('Loading indicator:', loadingIndicator);
     loadingIndicator.style.display = 'block';
 
     try {
         postsCache = [];
+        console.log('Fetching initial posts from Supabase');
         const posts = await supabaseFetch('posts?order=id.desc&limit=20', 'GET');
+        console.log('Initial posts loaded:', posts);
         if (posts) {
             postsCache = posts;
             sortPostsCache();
             renderPosts();
             if (postsCache.length > 0) {
                 lastPostId = postsCache[0].id;
+                console.log('lastPostId set to:', lastPostId);
             }
             isPostsLoaded = true;
+            console.log('Fetching total posts count');
+            const totalPosts = await supabaseFetch('posts?select=id', 'GET');
+            console.log('Total posts in database:', totalPosts ? totalPosts.length : 'undefined');
+            loadMoreBtn.style.display = totalPosts && totalPosts.length > 20 ? 'block' : 'block'; // Принудительно показываем
+            console.log('loadMoreBtn display set to:', loadMoreBtn.style.display);
+            if (posts.length === 20) {
+                console.log('Loaded 20 posts, triggering loadMorePosts');
+                loadMorePosts();
+            }
+        } else {
+            console.log('No posts returned from Supabase');
         }
     } catch (error) {
         console.error('Error loading posts:', error);
         alert('Ошибка загрузки постов: ' + error.message);
     } finally {
         loadingIndicator.style.display = 'none';
+        console.log('loadPosts finished');
     }
 
+    console.log('Setting up infinite scroll');
     setupInfiniteScroll();
 }
 
 async function loadMorePosts() {
-    if (isLoadingMore || postsCache.length === 0) return;
+    if (isLoadingMore || postsCache.length === 0) {
+        console.log('Skipping loadMorePosts: isLoadingMore=', isLoadingMore, 'postsCache.length=', postsCache.length);
+        return;
+    }
 
     isLoadingMore = true;
     const oldestPostId = postsCache[postsCache.length - 1].id;
+    console.log('Attempting to load more posts, oldestPostId:', oldestPostId);
 
     try {
-        const morePosts = await supabaseFetch(`posts?id=lt.${oldestPostId}&order=id.desc&limit=20`, 'GET');
+        const query = `posts?id=lt.${oldestPostId}&order=id.desc&limit=20`;
+        console.log('Supabase query:', query);
+        const morePosts = await supabaseFetch(query, 'GET');
+        console.log('Raw response from Supabase:', morePosts);
+
         if (morePosts && morePosts.length > 0) {
             const newPosts = morePosts.filter(post => !postsCache.some(p => p.id === post.id));
+            console.log('Filtered new posts:', newPosts);
             if (newPosts.length > 0) {
                 postsCache.push(...newPosts);
                 sortPostsCache();
                 renderMorePosts(newPosts);
+                loadMoreBtn.style.display = 'block';
+                console.log('Added new posts, total in cache:', postsCache.length);
+            } else {
+                loadMoreBtn.style.display = 'none';
+                console.log('No new posts after filtering');
             }
+        } else {
+            loadMoreBtn.style.display = 'none';
+            console.log('No more posts returned from Supabase');
         }
     } catch (error) {
-        console.error('Error loading more posts:', error);
+        console.error('Error in loadMorePosts:', error);
     } finally {
         isLoadingMore = false;
+        console.log('Finished loadMorePosts, isLoadingMore:', isLoadingMore);
     }
 }
 
 async function loadNewPosts() {
     try {
         const newPosts = await supabaseFetch(`posts?id=gt.${lastPostId}&order=id.desc`, 'GET');
+        console.log('New posts loaded:', newPosts);
         if (newPosts && newPosts.length > 0) {
             const uniqueNewPosts = newPosts.filter(post => !postsCache.some(p => p.id === post.id));
             if (uniqueNewPosts.length > 0) {
@@ -301,13 +356,28 @@ function isUserAtTop() {
 
 function setupInfiniteScroll() {
     const feedSection = document.getElementById('feed');
+    if (!feedSection) {
+        console.error('Feed section not found!');
+        return;
+    }
+    console.log('Setting up infinite scroll');
+    console.log('Feed CSS height:', feedSection.style.maxHeight);
+    console.log('Feed scrollHeight:', feedSection.scrollHeight, 'clientHeight:', feedSection.clientHeight);
+    feedSection.style.overflowY = 'auto';
     feedSection.removeEventListener('scroll', debouncedLoadMorePosts);
     feedSection.addEventListener('scroll', debouncedLoadMorePosts);
 }
 
 const debouncedLoadMorePosts = debounce(() => {
     const feedSection = document.getElementById('feed');
-    if (feedSection.scrollHeight - feedSection.scrollTop <= feedSection.clientHeight + 100) {
+    if (!feedSection) {
+        console.error('Feed section not found in debouncedLoadMorePosts');
+        return;
+    }
+    const scrollBottom = feedSection.scrollHeight - feedSection.scrollTop - feedSection.clientHeight;
+    console.log('Scroll event - scrollTop:', feedSection.scrollTop, 'scrollHeight:', feedSection.scrollHeight, 'clientHeight:', feedSection.clientHeight, 'scrollBottom:', scrollBottom);
+    if (scrollBottom <= 200) {
+        console.log('Near bottom, triggering loadMorePosts');
         loadMorePosts();
     }
 }, 300);
@@ -321,6 +391,8 @@ function renderPosts() {
     for (const post of postsCache) {
         renderNewPost(post, false);
     }
+    console.log('Rendered posts, count:', postsCache.length);
+    postsDiv.appendChild(loadMoreBtn);
 }
 
 function renderNewPosts(newPosts, prepend = false) {
@@ -415,6 +487,8 @@ async function renderMorePosts(newPosts) {
 
         loadReactionsAndComments(post.id);
     }
+    console.log('Rendered more posts, count:', newPosts.length);
+    postsDiv.appendChild(loadMoreBtn);
 }
 
 async function loadReactionsAndComments(postId) {
@@ -565,17 +639,14 @@ async function toggleReaction(postId, type) {
     }
 }
 
-// Новые функции для комментариев
 async function loadComments(postId) {
     try {
-        // Инициализируем кэш для этого поста, если его нет
         if (!commentsCache.has(postId)) {
             commentsCache.set(postId, []);
             lastCommentIds.set(postId, null);
             newCommentsCount.set(postId, 0);
         }
 
-        // Загружаем первые 10 комментариев
         const comments = await supabaseFetch(`comments?post_id=eq.${postId}&order=id.asc&limit=10`, 'GET');
         if (comments && comments.length > 0) {
             const currentComments = commentsCache.get(postId);
@@ -640,7 +711,6 @@ async function loadNewComments(postId) {
 }
 
 function subscribeToNewComments(postId) {
-    // Удаляем старую подписку, если она существует
     if (commentChannels.has(postId)) {
         supabaseClient.removeChannel(commentChannels.get(postId));
     }
@@ -688,7 +758,6 @@ function setupCommentInfiniteScroll(postId) {
     const commentList = document.getElementById(`comment-list-${postId}`);
     if (!commentList) return;
 
-    // Удаляем старую подписку на комментарии
     if (commentChannels.has(postId)) {
         supabaseClient.removeChannel(commentChannels.get(postId));
         commentChannels.delete(postId);
@@ -703,10 +772,8 @@ function setupCommentInfiniteScroll(postId) {
     commentList.removeEventListener('scroll', debouncedLoadMoreComments);
     commentList.addEventListener('scroll', debouncedLoadMoreComments);
 
-    // Подписываемся на новые комментарии
     subscribeToNewComments(postId);
 
-    // Добавляем обработчик для кнопки "Новые комментарии"
     const newCommentsBtn = document.getElementById(`new-comments-btn-${postId}`);
     if (newCommentsBtn) {
         newCommentsBtn.onclick = () => {
@@ -720,7 +787,7 @@ function setupCommentInfiniteScroll(postId) {
 function sortCommentsCache(postId) {
     const comments = commentsCache.get(postId);
     if (comments) {
-        comments.sort((a, b) => a.id - b.id); // Сортировка по id (старые комментарии вверху)
+        comments.sort((a, b) => a.id - b.id);
         commentsCache.set(postId, comments);
     }
 }
@@ -759,7 +826,6 @@ function renderNewComment(postId, comment, append = false) {
 
     if (append) {
         commentList.appendChild(commentDiv);
-        // Прокручиваем вниз, если пользователь внизу
         if (isUserAtBottom(postId)) {
             commentList.scrollTop = commentList.scrollHeight;
         }
@@ -820,7 +886,6 @@ async function addComment(postId) {
         const newComment = await supabaseFetch('comments', 'POST', comment);
         commentInput.value = '';
 
-        // Добавляем комментарий в кэш
         const currentComments = commentsCache.get(postId) || [];
         if (!currentComments.some(c => c.id === newComment[0].id)) {
             commentsCache.set(postId, [...currentComments, newComment[0]]);
@@ -839,7 +904,6 @@ async function addComment(postId) {
             }
         }
 
-        // Обновляем счётчик комментариев
         await updatePost(postId);
     } catch (error) {
         console.error('Error adding comment:', error);
@@ -854,11 +918,9 @@ function toggleComments(postId) {
         commentSection.style.display = isVisible ? 'none' : 'block';
 
         if (!isVisible) {
-            // Загружаем комментарии и подписываемся на обновления
             loadComments(postId).then(comments => renderComments(postId, comments));
             setupCommentInfiniteScroll(postId);
         } else {
-            // Отписываемся от обновлений
             if (commentChannels.has(postId)) {
                 supabaseClient.removeChannel(commentChannels.get(postId));
                 commentChannels.delete(postId);
@@ -1103,7 +1165,6 @@ function initRegistration() {
     };
 
     submitRegistrationBtn.addEventListener('click', async () => {
-        // Отключаем кнопку, чтобы предотвратить повторные клики
         submitRegistrationBtn.disabled = true;
 
         const registration = {
@@ -1156,7 +1217,6 @@ async function loadRegistrations(tournamentId, isCreator) {
         const registrationList = document.getElementById('registration-list');
         registrationList.innerHTML = '';
 
-        // Удаляем возможные дубли на клиентской стороне
         const seen = new Set();
         const uniqueRegistrations = registrations.filter(reg => {
             const key = `${reg.tournament_id}|${reg.faction_name}|${reg.club}`;
