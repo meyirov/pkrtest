@@ -21,22 +21,36 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
+    height: 100vh; /* Устанавливаем фиксированную высоту */
 }
 
 /* Основной контент */
 .main-content {
     flex: 1;
     padding: 10px;
-    padding-bottom: 60px;
+    padding-bottom: 80px; /* Увеличено, чтобы учесть высоту .navbar */
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .content {
     display: none;
+    flex: 1; /* Растягивается на всё доступное пространство */
 }
 
 .content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Обновлено для растяжки #feed */
+#feed {
+    flex: 1; /* Растягивается на всё доступное пространство */
+    height: 100%; /* Занимает всю высоту родителя */
+    overflow-y: auto;
+    padding: 10px;
+    box-sizing: border-box;
 }
 
 /* Новый пост */
@@ -102,8 +116,7 @@ body {
 
 /* Посты */
 #posts {
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
+    flex-grow: 1; /* Растягивается внутри #feed */
 }
 
 .post {
@@ -197,6 +210,28 @@ body {
 
 .comment-toggle-btn:hover {
     background: #404040;
+}
+
+/* Кнопка "Загрузить ещё" */
+.load-more-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 8px 16px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+}
+
+.load-more-btn:hover {
+    background: #a78bfa;
+    transform: scale(1.05);
 }
 
 /* Комментарии */
@@ -418,7 +453,7 @@ body {
     line-height: 1.4;
 }
 
-/* Заголовок турнира */
+/* Заг57оловок турнира */
 #tournament-header {
     background: #1a1a1a;
     padding: 10px;
