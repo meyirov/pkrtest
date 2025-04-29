@@ -1,4 +1,4 @@
-console.log('script.js loaded, version: 2025-04-28');
+console.log('script.js loaded, version: 2025-04-29');
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -19,6 +19,7 @@ let isLoadingMore = false;
 let newPostsCount = 0;
 let channel = null;
 let commentChannels = new Map();
+let reactionChannels = new Map(); // Добавляем для реакций
 let commentsCache = new Map();
 let lastCommentIds = new Map();
 let newCommentsCount = new Map();
@@ -169,7 +170,7 @@ const loadMoreBtn = document.createElement('button');
 loadMoreBtn.id = 'load-more-btn';
 loadMoreBtn.className = 'load-more-btn';
 loadMoreBtn.innerHTML = 'Загрузить ещё';
-loadMoreBtn.style.display = 'block'; // Принудительно показываем
+loadMoreBtn.style.display = 'block';
 loadMoreBtn.addEventListener('click', () => {
     console.log('Load more button clicked');
     loadMorePosts();
@@ -238,7 +239,7 @@ async function loadPosts() {
             console.log('Fetching total posts count');
             const totalPosts = await supabaseFetch('posts?select=id', 'GET');
             console.log('Total posts in database:', totalPosts ? totalPosts.length : 'undefined');
-            loadMoreBtn.style.display = totalPosts && totalPosts.length > 20 ? 'block' : 'block'; // Принудительно показываем
+            loadMoreBtn.style.display = totalPosts && totalPosts.length > 20 ? 'block' : 'block';
             console.log('loadMoreBtn display set to:', loadMoreBtn.style.display);
             if (posts.length === 20) {
                 console.log('Loaded 20 posts, triggering loadMorePosts');
@@ -444,6 +445,7 @@ function renderNewPost(post, prepend = false) {
     }
 
     loadReactionsAndComments(post.id);
+    subscribeToReactions(post.id); // Подписываемся на изменения реакций
 }
 
 async function renderMorePosts(newPosts) {
@@ -486,6 +488,7 @@ async function renderMorePosts(newPosts) {
         postsDiv.appendChild(postDiv);
 
         loadReactionsAndComments(post.id);
+        subscribeToReactions(post.id); // Подписываемся на изменения реакций
     }
     console.log('Rendered more posts, count:', newPosts.length);
     postsDiv.appendChild(loadMoreBtn);
@@ -605,6 +608,28 @@ async function loadReactions(postId) {
         console.error('Error loading reactions:', error);
         return [];
     }
+}
+
+function subscribeToReactions(postId) {
+    if (reactionChannels.has(postId)) {
+        supabaseClient.removeChannel(reactionChannels.get(postId));
+    }
+
+    const channel = supabaseClient
+        .channel(`reactions-channel-${postId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reactions', filter: `post_id=eq.${postId}` }, (payload) => {
+            console.log(`Reaction change detected for post ${postId}:`, payload);
+            updatePost(postId); // Обновляем пост при изменении реакций
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log(`Subscribed to reactions channel for post ${postId}`);
+            } else {
+                console.error(`Failed to subscribe to reactions channel for post ${postId}:`, status);
+            }
+        });
+
+    reactionChannels.set(postId, channel);
 }
 
 async function toggleReaction(postId, type) {
@@ -733,6 +758,7 @@ function subscribeToNewComments(postId) {
                     if (newCommentsBtn) {
                         newCommentsBtn.style.display = 'block';
                         newCommentsBtn.classList.add('visible');
+                        newCommentsBtn.textContent = `Новые комментарии (${newCommentsCount.get(postId)})`;
                     }
                 }
             }
@@ -797,17 +823,17 @@ async function renderComments(postId, comments) {
     if (!commentList) return;
     commentList.innerHTML = '';
     comments.forEach(comment => {
-        renderNewComment(postId, comment, false);
+        renderNewComment(postId, comment, true); // Используем append для хронологического порядка
     });
 }
 
-async function renderNewComments(postId, newComments, append = false) {
+async function renderNewComments(postId, newComments, append = true) {
     for (const comment of newComments) {
         renderNewComment(postId, comment, append);
     }
 }
 
-function renderNewComment(postId, comment, append = false) {
+function renderNewComment(postId, comment, append = true) {
     const commentList = document.getElementById(`comment-list-${postId}`);
     if (!commentList) return;
 
@@ -851,7 +877,7 @@ async function renderMoreComments(postId, newComments) {
             </div>
             <div class="comment-content">${content}</div>
         `;
-        commentList.prepend(commentDiv);
+        commentList.appendChild(commentDiv); // Используем append вместо prepend
     }
 }
 
@@ -900,6 +926,7 @@ async function addComment(postId) {
                 if (newCommentsBtn) {
                     newCommentsBtn.style.display = 'block';
                     newCommentsBtn.classList.add('visible');
+                    newCommentsBtn.textContent = `Новые комментарии (${newCommentsCount.get(postId)})`;
                 }
             }
         }
@@ -1161,7 +1188,7 @@ function initRegistration() {
     const submitRegistrationBtn = document.getElementById('submit-registration-btn');
 
     registerBtn.onclick = () => {
-        registrationForm.classList.toggle('form-hidden');
+        registrationForm.classList.toggle('-hidden');
     };
 
     submitRegistrationBtn.addEventListener('click', async () => {
