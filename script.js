@@ -19,7 +19,7 @@ let isLoadingMore = false;
 let newPostsCount = 0;
 let channel = null;
 let commentChannels = new Map();
-let reactionChannels = new Map(); // Добавляем для реакций
+let reactionChannels = new Map();
 let commentsCache = new Map();
 let lastCommentIds = new Map();
 let newCommentsCount = new Map();
@@ -49,6 +49,27 @@ async function supabaseFetch(endpoint, method, body = null, retries = 3) {
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
     }
+}
+
+async function uploadImage(file) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const { data, error } = await supabaseClient.storage
+        .from('post-images')
+        .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+        });
+    
+    if (error) {
+        throw new Error(`Ошибка загрузки изображения: ${error.message}`);
+    }
+    
+    const { data: urlData } = supabaseClient.storage
+        .from('post-images')
+        .getPublicUrl(fileName);
+    
+    return urlData.publicUrl;
 }
 
 async function checkProfile() {
@@ -152,6 +173,7 @@ updateProfileBtn.addEventListener('click', async () => {
 });
 
 const postText = document.getElementById('post-text');
+const postImage = document.getElementById('post-image');
 const submitPost = document.getElementById('submit-post');
 const postsDiv = document.getElementById('posts');
 const newPostsBtn = document.createElement('button');
@@ -190,8 +212,13 @@ submitPost.addEventListener('click', async () => {
         user_id: userData.telegramUsername
     };
     try {
+        if (postImage.files.length > 0) {
+            const imageUrl = await uploadImage(postImage.files[0]);
+            post.image_url = imageUrl;
+        }
         const newPost = await supabaseFetch('posts', 'POST', post);
         postText.value = '';
+        postImage.value = '';
         if (!postsCache.some(p => p.id === newPost[0].id)) {
             postsCache.unshift(newPost[0]);
             sortPostsCache();
@@ -402,6 +429,20 @@ function renderNewPosts(newPosts, prepend = false) {
     }
 }
 
+// Новая функция для форматирования текста поста
+function formatPostContent(content) {
+    // Заменяем переносы строк на <br>
+    let formattedContent = content.replace(/\n/g, '<br>');
+    
+    // Преобразуем URL в кликабельные ссылки
+    const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]\}])/g;
+    formattedContent = formattedContent.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+    
+    return formattedContent;
+}
+
 function renderNewPost(post, prepend = false) {
     const postDiv = document.createElement('div');
     postDiv.classList.add('post');
@@ -411,6 +452,7 @@ function renderNewPost(post, prepend = false) {
     const [fullname, username] = userInfo.split(' (@');
     const cleanUsername = username ? username.replace(')', '') : '';
     const content = contentParts.join(':\n');
+    const formattedContent = formatPostContent(content); // Форматируем текст
 
     const timeAgo = getTimeAgo(new Date(post.timestamp));
 
@@ -422,7 +464,8 @@ function renderNewPost(post, prepend = false) {
             </div>
             <div class="post-time">${timeAgo}</div>
         </div>
-        <div class="post-content">${content}</div>
+        <div class="post-content">${formattedContent}</div>
+        ${post.image_url ? `<img src="${post.image_url}" class="post-image" alt="Post image">` : ''}
         <div class="post-actions">
             <button class="reaction-btn like-btn" onclick="toggleReaction(${post.id}, 'like')">👍 0</button>
             <button class="reaction-btn dislike-btn" onclick="toggleReaction(${post.id}, 'dislike')">👎 0</button>
@@ -445,7 +488,7 @@ function renderNewPost(post, prepend = false) {
     }
 
     loadReactionsAndComments(post.id);
-    subscribeToReactions(post.id); // Подписываемся на изменения реакций
+    subscribeToReactions(post.id);
 }
 
 async function renderMorePosts(newPosts) {
@@ -458,6 +501,7 @@ async function renderMorePosts(newPosts) {
         const [fullname, username] = userInfo.split(' (@');
         const cleanUsername = username ? username.replace(')', '') : '';
         const content = contentParts.join(':\n');
+        const formattedContent = formatPostContent(content); // Форматируем текст
 
         const timeAgo = getTimeAgo(new Date(post.timestamp));
 
@@ -469,7 +513,8 @@ async function renderMorePosts(newPosts) {
                 </div>
                 <div class="post-time">${timeAgo}</div>
             </div>
-            <div class="post-content">${content}</div>
+            <div class="post-content">${formattedContent}</div>
+            ${post.image_url ? `<img src="${post.image_url}" class="post-image" alt="Post image">` : ''}
             <div class="post-actions">
                 <button class="reaction-btn like-btn" onclick="toggleReaction(${post.id}, 'like')">👍 0</button>
                 <button class="reaction-btn dislike-btn" onclick="toggleReaction(${post.id}, 'dislike')">👎 0</button>
@@ -488,7 +533,7 @@ async function renderMorePosts(newPosts) {
         postsDiv.appendChild(postDiv);
 
         loadReactionsAndComments(post.id);
-        subscribeToReactions(post.id); // Подписываемся на изменения реакций
+        subscribeToReactions(post.id);
     }
     console.log('Rendered more posts, count:', newPosts.length);
     postsDiv.appendChild(loadMoreBtn);
@@ -553,6 +598,7 @@ async function updatePost(postId) {
     const [fullname, username] = userInfo.split(' (@');
     const cleanUsername = username ? username.replace(')', '') : '';
     const content = contentParts.join(':\n');
+    const formattedContent = formatPostContent(content); // Форматируем текст
 
     const timeAgo = getTimeAgo(new Date(post[0].timestamp));
 
@@ -564,7 +610,8 @@ async function updatePost(postId) {
             </div>
             <div class="post-time">${timeAgo}</div>
         </div>
-        <div class="post-content">${content}</div>
+        <div class="post-content">${formattedContent}</div>
+        ${post[0].image_url ? `<img src="${post[0].image_url}" class="post-image" alt="Post image">` : ''}
         <div class="post-actions">
             <button class="reaction-btn like-btn ${likeClass}" onclick="toggleReaction(${postId}, 'like')">👍 ${likes}</button>
             <button class="reaction-btn dislike-btn ${dislikeClass}" onclick="toggleReaction(${postId}, 'dislike')">👎 ${dislikes}</button>
@@ -619,7 +666,7 @@ function subscribeToReactions(postId) {
         .channel(`reactions-channel-${postId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reactions', filter: `post_id=eq.${postId}` }, (payload) => {
             console.log(`Reaction change detected for post ${postId}:`, payload);
-            updatePost(postId); // Обновляем пост при изменении реакций
+            updatePost(postId);
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
@@ -823,7 +870,7 @@ async function renderComments(postId, comments) {
     if (!commentList) return;
     commentList.innerHTML = '';
     comments.forEach(comment => {
-        renderNewComment(postId, comment, true); // Используем append для хронологического порядка
+        renderNewComment(postId, comment, true);
     });
 }
 
@@ -877,7 +924,7 @@ async function renderMoreComments(postId, newComments) {
             </div>
             <div class="comment-content">${content}</div>
         `;
-        commentList.appendChild(commentDiv); // Используем append вместо prepend
+        commentList.appendChild(commentDiv);
     }
 }
 
@@ -1188,7 +1235,7 @@ function initRegistration() {
     const submitRegistrationBtn = document.getElementById('submit-registration-btn');
 
     registerBtn.onclick = () => {
-        registrationForm.classList.toggle('-hidden');
+        registrationForm.classList.toggle('form-hidden');
     };
 
     submitRegistrationBtn.addEventListener('click', async () => {
