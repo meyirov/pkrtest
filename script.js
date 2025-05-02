@@ -1,4 +1,4 @@
-console.log('script.js loaded, version: 2025-04-29');
+console.log('script.js loaded, version: 2025-05-02');
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -72,6 +72,72 @@ async function uploadImage(file) {
     return urlData.publicUrl;
 }
 
+async function saveChatId(userId) {
+    if (tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+        try {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ chat_id: tg.initDataUnsafe.user.id.toString() })
+                .eq('telegram_username', userData.telegramUsername);
+            if (error) throw error;
+            console.log('Chat ID saved:', tg.initDataUnsafe.user.id);
+            alert('Telegram успешно привязан!');
+            showProfile(); // Обновляем профиль
+        } catch (error) {
+            console.error('Error saving chat_id:', error);
+            alert('Ошибка привязки Telegram: ' + error.message);
+        }
+    } else {
+        // Открываем бота с /start <user_id>
+        const botLink = `https://t.me/MyPKRBot?start=${userId}`;
+        tg.openTelegramLink(botLink);
+    }
+}
+
+async function showProfile() {
+    const profileSection = document.getElementById('profile');
+    try {
+        const profiles = await supabaseFetch(`profiles?telegram_username=eq.${userData.telegramUsername}`, 'GET');
+        if (profiles && profiles.length > 0) {
+            const profile = profiles[0];
+            const chatIdStatus = profile.chat_id ? `Привязан (ID: ${profile.chat_id})` : 'Не привязан';
+            profileSection.innerHTML = `
+                <h2>Профиль</h2>
+                ${!profile.chat_id ? '<p style="color: #ff4d4d;">📢 Привяжите Telegram для уведомлений!</p>' : ''}
+                <p>Username: <span>${userData.telegramUsername}</span></p>
+                <p>Chat ID: <span>${chatIdStatus}</span></p>
+                <input id="fullname" type="text" placeholder="Имя и фамилия" value="${profile.fullname || ''}">
+                <button id="update-profile">Изменить имя</button>
+                ${!profile.chat_id ? '<button id="link-telegram">Привязать Telegram</button>' : ''}
+            `;
+            const updateProfileBtn = document.getElementById('update-profile');
+            updateProfileBtn.addEventListener('click', async () => {
+                const newFullname = document.getElementById('fullname').value.trim();
+                if (!newFullname) {
+                    alert('Пожалуйста, введите новое имя!');
+                    return;
+                }
+                userData.fullname = newFullname;
+                try {
+                    await supabaseFetch(`profiles?telegram_username=eq.${userData.telegramUsername}`, 'PATCH', {
+                        fullname: userData.fullname
+                    });
+                    alert('Имя обновлено!');
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    alert('Ошибка: ' + error.message);
+                }
+            });
+            if (!profile.chat_id) {
+                document.getElementById('link-telegram').addEventListener('click', () => saveChatId(profiles[0].id));
+            }
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        profileSection.innerHTML += '<p>Ошибка загрузки профиля</p>';
+    }
+}
+
 async function checkProfile() {
     console.log('checkProfile started');
     const telegramUsername = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.username : null;
@@ -87,6 +153,7 @@ async function checkProfile() {
         if (profiles && profiles.length > 0) {
             userData.fullname = profiles[0].fullname;
             showApp();
+            await saveChatId(profiles[0].id);
         } else {
             registrationModal.style.display = 'block';
         }
@@ -105,7 +172,8 @@ submitProfileRegBtn.addEventListener('click', async () => {
     try {
         await supabaseFetch('profiles', 'POST', {
             telegram_username: userData.telegramUsername,
-            fullname: userData.fullname
+            fullname: userData.fullname,
+            chat_id: tg.initDataUnsafe.user?.id?.toString() || null
         });
         registrationModal.style.display = 'none';
         showApp();
@@ -148,29 +216,11 @@ buttons.forEach(button => {
             debouncedLoadPosts();
         }
         if (button.id === 'tournaments-btn') loadTournaments();
+        if (button.id === 'profile-btn') showProfile();
     });
 });
 
 const debouncedLoadPosts = debounce(loadPosts, 300);
-
-const updateProfileBtn = document.getElementById('update-profile');
-updateProfileBtn.addEventListener('click', async () => {
-    const newFullname = document.getElementById('fullname').value.trim();
-    if (!newFullname) {
-        alert('Пожалуйста, введите новое имя!');
-        return;
-    }
-    userData.fullname = newFullname;
-    try {
-        await supabaseFetch(`profiles?telegram_username=eq.${userData.telegramUsername}`, 'PATCH', {
-            fullname: userData.fullname
-        });
-        alert('Имя обновлено!');
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        alert('Ошибка: ' + error.message);
-    }
-});
 
 const postText = document.getElementById('post-text');
 const postImage = document.getElementById('post-image');
@@ -198,6 +248,25 @@ loadMoreBtn.addEventListener('click', () => {
     loadMorePosts();
 });
 postsDiv.appendChild(loadMoreBtn);
+
+async function processTags(text, postId) {
+    const tagRegex = /@([a-zA-Z0-9_]+)/g;
+    const tags = text.match(tagRegex) || [];
+    for (const tag of tags) {
+        const username = tag.slice(1);
+        try {
+            await supabaseFetch('tag_notifications', 'POST', {
+                tagged_username: username,
+                post_id: postId,
+                user_id: userData.telegramUsername,
+                text: text,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('Error sending tag notification:', error);
+        }
+    }
+}
 
 submitPost.addEventListener('click', async () => {
     const postContent = postText.value.trim();
@@ -230,6 +299,7 @@ submitPost.addEventListener('click', async () => {
                 newPostsBtn.classList.add('visible');
             }
             lastPostId = postsCache[0].id;
+            await processTags(postContent, newPost[0].id);
         }
     } catch (error) {
         console.error('Error saving post:', error);
@@ -429,17 +499,16 @@ function renderNewPosts(newPosts, prepend = false) {
     }
 }
 
-// Новая функция для форматирования текста поста
 function formatPostContent(content) {
-    // Заменяем переносы строк на <br>
     let formattedContent = content.replace(/\n/g, '<br>');
-    
-    // Преобразуем URL в кликабельные ссылки
     const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]\}])/g;
     formattedContent = formattedContent.replace(urlRegex, (url) => {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
     });
-    
+    const tagRegex = /@([a-zA-Z0-9_]+)/g;
+    formattedContent = formattedContent.replace(tagRegex, (tag) => {
+        return `<span class="tag">${tag}</span>`;
+    });
     return formattedContent;
 }
 
@@ -452,7 +521,7 @@ function renderNewPost(post, prepend = false) {
     const [fullname, username] = userInfo.split(' (@');
     const cleanUsername = username ? username.replace(')', '') : '';
     const content = contentParts.join(':\n');
-    const formattedContent = formatPostContent(content); // Форматируем текст
+    const formattedContent = formatPostContent(content);
 
     const timeAgo = getTimeAgo(new Date(post.timestamp));
 
@@ -501,7 +570,7 @@ async function renderMorePosts(newPosts) {
         const [fullname, username] = userInfo.split(' (@');
         const cleanUsername = username ? username.replace(')', '') : '';
         const content = contentParts.join(':\n');
-        const formattedContent = formatPostContent(content); // Форматируем текст
+        const formattedContent = formatPostContent(content);
 
         const timeAgo = getTimeAgo(new Date(post.timestamp));
 
@@ -598,7 +667,7 @@ async function updatePost(postId) {
     const [fullname, username] = userInfo.split(' (@');
     const cleanUsername = username ? username.replace(')', '') : '';
     const content = contentParts.join(':\n');
-    const formattedContent = formatPostContent(content); // Форматируем текст
+    const formattedContent = formatPostContent(content);
 
     const timeAgo = getTimeAgo(new Date(post[0].timestamp));
 
@@ -890,11 +959,12 @@ function renderNewComment(postId, comment, append = true) {
     const [fullname, username] = userInfo.split(' (@');
     const cleanUsername = username ? username.replace(')', '') : '';
     const content = contentParts.join(':\n');
+    const formattedContent = formatPostContent(content);
     commentDiv.innerHTML = `
         <div class="comment-user">
             <strong>${fullname}</strong> <span>@${cleanUsername}</span>
         </div>
-        <div class="comment-content">${content}</div>
+        <div class="comment-content">${formattedContent}</div>
     `;
 
     if (append) {
@@ -918,11 +988,12 @@ async function renderMoreComments(postId, newComments) {
         const [fullname, username] = userInfo.split(' (@');
         const cleanUsername = username ? username.replace(')', '') : '';
         const content = contentParts.join(':\n');
+        const formattedContent = formatPostContent(content);
         commentDiv.innerHTML = `
             <div class="comment-user">
                 <strong>${fullname}</strong> <span>@${cleanUsername}</span>
             </div>
-            <div class="comment-content">${content}</div>
+            <div class="comment-content">${formattedContent}</div>
         `;
         commentList.appendChild(commentDiv);
     }
@@ -976,6 +1047,7 @@ async function addComment(postId) {
                     newCommentsBtn.textContent = `Новые комментарии (${newCommentsCount.get(postId)})`;
                 }
             }
+            await processTags(text, null);
         }
 
         await updatePost(postId);
@@ -1491,15 +1563,15 @@ async function loadBracket(tournamentId) {
                             <p>${team.position}: ${team.faction_name} <span class="team-club">(${team.club})</span></p>
                         `;
                     });
+                    matchHTML += `
+                        <p>Кабинет: ${match.room || 'Не указан'}</p>
+                        <p>Судья: ${match.judge || 'Не указан'}</p>
+                    `;
                     if (isCreator && !data.published) {
                         matchHTML += `
-                            <input type="text" id="room-input-${round.round}-${matchIdx}" name="room-${round.round}-${matchIdx}" placeholder="Кабинет" value="${match.room || ''}" data-round="${round.round}" data-match="${matchIdx}" class="room-input">
-                            <input type="text" id="judge-input-${round.round}-${matchIdx}" name="judge-${round.round}-${matchIdx}" placeholder="Судья" value="${match.judge || ''}" data-round="${round.round}" data-match="${matchIdx}" class="judge-input">
-                        `;
-                    } else if (data.published) {
-                        matchHTML += `
-                            <p>Кабинет: ${match.room || 'Не указан'}</p>
-                            <p>Судья: ${match.judge || 'Не указан'}</p>
+                            <input type="text" id="room-${round.round}-${matchIdx}" placeholder="Кабинет" value="${match.room || ''}">
+                            <input type="text" id="judge-${round.round}-${matchIdx}" placeholder="Судья" value="${match.judge || ''}">
+                            <button onclick="updateMatch(${tournamentId}, ${round.round}, ${matchIdx})">Сохранить</button>
                         `;
                     }
                     matchDiv.innerHTML = matchHTML;
@@ -1510,18 +1582,10 @@ async function loadBracket(tournamentId) {
 
             if (isCreator && !data.published) {
                 const publishBtn = document.createElement('button');
-                publishBtn.id = 'publish-bracket-btn';
-                publishBtn.textContent = 'Опубликовать';
+                publishBtn.textContent = 'Опубликовать сетку';
                 publishBtn.onclick = async () => {
-                    const updatedMatches = data.matches.map(round => ({
-                        round: round.round,
-                        matches: round.matches.map((match, matchIdx) => ({
-                            teams: match.teams,
-                            room: document.querySelector(`.room-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value,
-                            judge: document.querySelector(`.judge-input[data-round="${round.round}"][data-match="${matchIdx}"]`).value
-                        }))
-                    }));
-                    await supabaseFetch(`brackets?id=eq.${data.id}`, 'PATCH', { matches: updatedMatches, published: true });
+                    await supabaseFetch(`brackets?id=eq.${data.id}`, 'PATCH', { published: true });
+                    alert('Сетка опубликована!');
                     loadBracket(tournamentId);
                 };
                 bracketDisplay.appendChild(publishBtn);
@@ -1535,17 +1599,24 @@ async function loadBracket(tournamentId) {
     }
 }
 
-const ratingList = document.getElementById('rating-list');
-const rating = [
-    { name: 'Иван Иванов', points: 150 },
-    { name: 'Анна Петрова', points: 120 }
-];
+async function updateMatch(tournamentId, round, matchIdx) {
+    try {
+        const bracket = await supabaseFetch(`brackets?tournament_id=eq.${tournamentId}&order=timestamp.desc&limit=1`, 'GET');
+        if (!bracket || bracket.length === 0) return;
 
-rating.forEach(player => {
-    const div = document.createElement('div');
-    div.classList.add('post');
-    div.innerHTML = `<strong>${player.name}</strong> - ${player.points} очков`;
-    ratingList.appendChild(div);
-});
+        const data = bracket[0];
+        const roomInput = document.getElementById(`room-${round}-${matchIdx}`);
+        const judgeInput = document.getElementById(`judge-${round.round}-${matchIdx}`);
+        data.matches[round - 1].matches[matchIdx].room = roomInput.value;
+        data.matches[round - 1].matches[matchIdx].judge = judgeInput.value;
+
+        await supabaseFetch(`brackets?id=eq.${data.id}`, 'PATCH', { matches: data.matches });
+        alert('Матч обновлён!');
+        loadBracket(tournamentId);
+    } catch (error) {
+        console.error('Error updating match:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
 
 checkProfile();
