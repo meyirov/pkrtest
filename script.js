@@ -81,7 +81,6 @@ async function saveChatId(userId) {
                 .eq('telegram_username', userData.telegramUsername);
             if (error) throw error;
             console.log('Chat ID saved:', tg.initDataUnsafe.user.id);
-            alert('Telegram успешно привязан!');
             showProfile(); // Обновляем профиль
         } catch (error) {
             console.error('Error saving chat_id:', error);
