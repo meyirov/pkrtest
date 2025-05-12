@@ -268,9 +268,13 @@ async function processTags(text, postId) {
 }
 
 submitPost.addEventListener('click', async () => {
+    if (submitPost.disabled) return; // Prevent multiple submissions
+    submitPost.disabled = true; // Disable button during submission
+
     const postContent = postText.value.trim();
     if (!postContent) {
         alert('Пожалуйста, введите текст поста! Пустые посты не допускаются.');
+        submitPost.disabled = false;
         return;
     }
     const text = `${userData.fullname} (@${userData.telegramUsername}):\n${postContent}`;
@@ -303,6 +307,8 @@ submitPost.addEventListener('click', async () => {
     } catch (error) {
         console.error('Error saving post:', error);
         alert('Ошибка: ' + error.message);
+    } finally {
+        submitPost.disabled = false; // Re-enable button after completion
     }
 });
 
@@ -579,6 +585,7 @@ async function renderMorePosts(newPosts) {
                     <strong>${fullname}</strong>
                     <span>@${cleanUsername}</span>
                 </div>
+                </).
                 <div class="post-time">${timeAgo}</div>
             </div>
             <div class="post-content">${formattedContent}</div>
@@ -1001,10 +1008,14 @@ async function renderMoreComments(postId, newComments) {
 async function addComment(postId) {
     postId = parseInt(postId);
     const commentInput = document.getElementById(`comment-input-${postId}`);
-    if (!commentInput) return;
+    const commentButton = commentInput.parentElement.querySelector('button');
+    if (!commentInput || !commentButton || commentButton.disabled) return;
+
+    commentButton.disabled = true; // Disable button during submission
     const text = commentInput.value.trim();
     if (!text) {
         alert('Пожалуйста, введите текст комментария!');
+        commentButton.disabled = false;
         return;
     }
 
@@ -1053,6 +1064,8 @@ async function addComment(postId) {
     } catch (error) {
         console.error('Error adding comment:', error);
         alert('Ошибка: ' + error.message);
+    } finally {
+        commentButton.disabled = false; // Re-enable button after completion
     }
 }
 
@@ -1246,26 +1259,33 @@ function initTournamentPosts(isCreator, tournamentName) {
             </div>
             <div id="tournament-posts-list"></div>
         `;
-        document.getElementById('submit-tournament-post').onclick = async () => {
-            const text = document.getElementById('tournament-post-text').value.trim();
-            if (!text) {
-                alert('Пожалуйста, введите текст поста!');
-                return;
-            }
-            try {
-                await supabaseFetch('tournament_posts', 'POST', {
-                    tournament_id: currentTournamentId,
-                    creator_id: userData.telegramUsername,
-                    text: text,
-                    timestamp: new Date().toISOString()
-                });
-                document.getElementById('tournament-post-text').value = '';
-                loadTournamentPosts(currentTournamentId);
-            } catch (error) {
-                console.error('Error saving tournament post:', error);
-                alert('Ошибка: ' + error.message);
-            }
-        };
+    document.getElementById('submit-tournament-post').onclick = async () => {
+        const submitButton = document.getElementById('submit-tournament-post');
+        if (submitButton.disabled) return; // Prevent multiple submissions
+        submitButton.disabled = true; // Disable button during submission
+
+        const text = document.getElementById('tournament-post-text').value.trim();
+        if (!text) {
+            alert('Пожалуйста, введите текст поста!');
+            submitButton.disabled = false;
+            return;
+        }
+        try {
+            await supabaseFetch('tournament_posts', 'POST', {
+                tournament_id: currentTournamentId,
+                creator_id: userData.telegramUsername,
+                text: text,
+                timestamp: new Date().toISOString()
+            });
+            document.getElementById('tournament-post-text').value = '';
+            loadTournamentPosts(currentTournamentId);
+        } catch (error) {
+            console.error('Error saving tournament post:', error);
+            alert('Ошибка: ' + error.message);
+        } finally {
+            submitButton.disabled = false; // Re-enable button after completion
+        }
+    };
     } else {
         postsSection.innerHTML = `<div id="tournament-posts-list"></div>`;
     }
@@ -1310,7 +1330,8 @@ function initRegistration() {
     };
 
     submitRegistrationBtn.addEventListener('click', async () => {
-        submitRegistrationBtn.disabled = true;
+        if (submitRegistrationBtn.disabled) return; // Prevent multiple submissions
+        submitRegistrationBtn.disabled = true; // Disable button during submission
 
         const registration = {
             tournament_id: currentTournamentId,
@@ -1351,7 +1372,7 @@ function initRegistration() {
             console.error('Error saving registration:', error);
             alert('Ошибка: ' + error.message);
         } finally {
-            submitRegistrationBtn.disabled = false;
+            submitRegistrationBtn.disabled = false; // Re-enable button after completion
         }
     });
 }
