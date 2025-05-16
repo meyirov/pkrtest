@@ -86,7 +86,28 @@
                 </div>
             </section>
             <section id="rating" class="content">
-                <div id="rating-list"></div>
+                <div id="city-selector">
+                    <h2>Выберите город</h2>
+                    <button class="city-btn" data-city="Almaty">Алматы</button>
+                </div>
+                <div id="season-selector" class="selector-hidden">
+                    <h2>Выберите сезон</h2>
+                    <button class="season-btn" data-season="2024-2025">2024-2025</button>
+                </div>
+                <div id="rating-table" class="selector-hidden">
+                    <h2>Рейтинг игроков</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Место</th>
+                                <th>Имя</th>
+                                <th>Очки</th>
+                                <th>Клуб</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rating-list"></tbody>
+                    </table>
+                </div>
             </section>
             <section id="profile" class="content">
                 <h2>Профиль</h2>
@@ -108,5 +129,6 @@
         </nav>
     </div>
     <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937f34e8dc411363',t:'MTc0NTkzMzk3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937f34e8dc411363',t:'MTc0NTkzMzk3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
