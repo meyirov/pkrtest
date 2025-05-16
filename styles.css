@@ -997,3 +997,88 @@ body {
     background: #a78bfa;
     transform: scale(1.05);
 }
+
+/* Раздел рейтинга */
+#rating {
+    padding: 10px;
+    overflow-y: auto;
+}
+
+#city-selector, #season-selector, #rating-table {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#city-selector h2, #season-selector h2, #rating-table h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.city-btn, .season-btn {
+    width: 100%;
+    padding: 8px 16px;
+    background: #262626;
+    color: #e6e6e6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+    margin: 5px 0;
+    text-align: left;
+}
+
+.city-btn:hover, .season-btn:hover {
+    background: #404040;
+}
+
+.selector-hidden {
+    display: none;
+}
+
+#rating-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#rating-table th, #rating-table td {
+    padding: 8px;
+    font-size: 14px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+
+#rating-table th {
+    font-weight: 600;
+    color: #ffffff;
+    background: #262626;
+}
+
+#rating-table td {
+    color: #d1d5db;
+}
+
+#rating-table tr.rank-1 {
+    background: #E5AA70; /* Золотой */
+    color: #000000;
+}
+
+#rating-table tr.rank-2 {
+    background: #808080; /* Серебряный */
+    color: #000000;
+}
+
+#rating-table tr.rank-3 {
+    background: #CD7F32; /* Бронзовый */
+    color: #000000;
+}
+
+#rating-table tr.rank-1 td, #rating-table tr.rank-2 td, #rating-table tr.rank-3 td {
+    font-weight: 600;
+}
