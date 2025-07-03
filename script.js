@@ -1272,77 +1272,72 @@ function initRegistration() {
     
     registerBtn.onclick = () => registrationForm.classList.toggle('form-hidden');
 
-// ВСТАВЬТЕ ЭТОТ ИСПРАВЛЕННЫЙ БЛОК
-registrationForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitRegistrationBtn = document.getElementById('submit-registration-btn');
-    if (submitRegistrationBtn.disabled) return;
-    submitRegistrationBtn.disabled = true;
+    registrationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitRegistrationBtn = document.getElementById('submit-registration-btn');
+        if (submitRegistrationBtn.disabled) return;
+        submitRegistrationBtn.disabled = true;
 
-    const registrationData = {
-        tournament_id: currentTournamentId,
-        faction_name: document.getElementById('reg-faction-name').value.trim(),
-        speaker1_username: document.getElementById('reg-username1').value.trim(),
-        speaker2_username: document.getElementById('reg-username2').value.trim(),
-        club: document.getElementById('reg-club').value.trim(),
-        city: document.getElementById('reg-city').value.trim(),
-        contacts: document.getElementById('reg-contacts').value.trim(),
-        extra: document.getElementById('reg-extra').value.trim(),
-        timestamp: new Date().toISOString()
-    };
-    
-    if (!registrationData.faction_name || !registrationData.speaker1_username || !registrationData.speaker2_username || !registrationData.club) {
-        alert('Пожалуйста, заполните поля: Название фракции, Username обоих спикеров и Клуб.');
-        submitRegistrationBtn.disabled = false;
-        return;
-    }
-
-    try {
-        const usernamesToCheck = [registrationData.speaker1_username, registrationData.speaker2_username];
-        const profiles = await supabaseFetch(`profiles?telegram_username=in.(${usernamesToCheck.join(',')})`, 'GET');
+        const registrationData = {
+            tournament_id: currentTournamentId,
+            faction_name: document.getElementById('reg-faction-name').value.trim(),
+            speaker1_username: document.getElementById('reg-username1').value.trim(),
+            speaker2_username: document.getElementById('reg-username2').value.trim(),
+            club: document.getElementById('reg-club').value.trim(),
+            city: document.getElementById('reg-city').value.trim(),
+            contacts: document.getElementById('reg-contacts').value.trim(),
+            extra: document.getElementById('reg-extra').value.trim(),
+            timestamp: new Date().toISOString()
+        };
         
-        if (profiles.length < 2) {
-            alert('Один или оба указанных username не найдены в системе. Убедитесь, что спикеры зарегистрированы в приложении.');
+        if (!registrationData.faction_name || !registrationData.speaker1_username || !registrationData.speaker2_username || !registrationData.club) {
+            alert('Пожалуйста, заполните поля: Название фракции, Username обоих спикеров и Клуб.');
             submitRegistrationBtn.disabled = false;
             return;
         }
 
-        await supabaseFetch('registrations', 'POST', registrationData);
-
-        const currentUser = userData.telegramUsername;
-        const teammate = registrationData.speaker1_username === currentUser ? registrationData.speaker2_username : registrationData.speaker1_username;
-        const tournamentInfo = allTournaments.find(t => t.id === currentTournamentId);
-
-        const { error: invokeError } = await supabaseClient.functions.invoke('send-telegram-notification', {
-          body: JSON.stringify({
-            type: 'registration',
-            data: {
-              registered_by: currentUser,
-              teammate_username: teammate,
-              faction_name: registrationData.faction_name,
-              tournament_id: currentTournamentId,
-              tournament_name: tournamentInfo ? tournamentInfo.name : 'Неизвестный турнир'
+        try {
+            const usernamesToCheck = [registrationData.speaker1_username, registrationData.speaker2_username];
+            const profiles = await supabaseFetch(`profiles?telegram_username=in.(${usernamesToCheck.join(',')})`, 'GET');
+            
+            if (profiles.length < 2) {
+                alert('Один или оба указанных username не найдены в системе. Убедитесь, что спикеры зарегистрированы в приложении.');
+                submitRegistrationBtn.disabled = false;
+                return;
             }
-          })
-        });
 
-        if (invokeError) throw new Error(`Ошибка вызова функции уведомлений: ${invokeError.message}`);
+            await supabaseFetch('registrations', 'POST', registrationData);
 
-        alert('Регистрация отправлена! Ваш напарник получит уведомление.');
-        registrationForm.classList.add('form-hidden');
-        registrationForm.reset();
-        
-        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-        // Проверяем, является ли текущий пользователь создателем, и передаем ПРАВИЛЬНОЕ значение
-        const isCurrentUserCreator = tournamentInfo ? (tournamentInfo.creator_id === userData.telegramUsername) : false;
-        loadRegistrations(currentTournamentId, isCurrentUserCreator);
+            const currentUser = userData.telegramUsername;
+            const teammate = registrationData.speaker1_username === currentUser ? registrationData.speaker2_username : registrationData.speaker1_username;
+            const tournamentInfo = allTournaments.find(t => t.id === currentTournamentId);
 
-    } catch (error) {
-        alert('Ошибка: ' + error.message);
-    } finally {
-        submitRegistrationBtn.disabled = false;
-    }
-});
+            const { error: invokeError } = await supabaseClient.functions.invoke('send-telegram-notification', {
+              body: JSON.stringify({
+                type: 'registration',
+                data: {
+                  registered_by: currentUser,
+                  teammate_username: teammate,
+                  faction_name: registrationData.faction_name,
+                  tournament_id: currentTournamentId,
+                  tournament_name: tournamentInfo ? tournamentInfo.name : 'Неизвестный турнир'
+                }
+              })
+            });
+
+            if (invokeError) throw new Error(`Ошибка вызова функции уведомлений: ${invokeError.message}`);
+
+            alert('Регистрация отправлена! Ваш напарник получит уведомление.');
+            registrationForm.classList.add('form-hidden');
+            registrationForm.reset();
+            loadRegistrations(currentTournamentId, true);
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        } finally {
+            submitRegistrationBtn.disabled = false;
+        }
+    });
+}
 
 async function loadRegistrations(tournamentId, isCreator) {
     const registrationList = document.getElementById('registration-list');
