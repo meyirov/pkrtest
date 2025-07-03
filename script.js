@@ -1,5 +1,4 @@
-// Полностью исправленная и проверенная версия.
-console.log('script.js loaded, version: 2025-07-03_final_fix');
+console.log('script.js loaded, version: 2025-07-03_final_fix_v3');
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -447,13 +446,13 @@ function renderNewPosts(newPosts, prepend = false) {
 }
 
 function formatPostContent(content) {
-  if (!content) return '';
-  let formatted = content.replace(/\n/g, '<br>');
-  const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]\}])/g;
-  formatted = formatted.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
-  const tagRegex = /@([a-zA-Z0-9_]+)/g;
-  formatted = formatted.replace(tagRegex, tag => `<span class="tag">${tag}</span>`);
-  return formatted;
+    if (!content) return '';
+    let formatted = content.replace(/\n/g, '<br>');
+    const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]\}])/g;
+    formatted = formatted.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
+    const tagRegex = /@([a-zA-Z0-9_]+)/g;
+    formatted = formatted.replace(tagRegex, tag => `<span class="tag">${tag}</span>`);
+    return formatted;
 }
 
 function renderNewPost(post, prepend = false) {
@@ -928,7 +927,6 @@ function initTournaments() {
         });
     }
 
-
     createTournamentBtn.addEventListener('click', () => {
         createTournamentForm.classList.toggle('form-hidden');
     });
@@ -1054,7 +1052,6 @@ function renderFilteredTournaments() {
             card.className = `tournament-card ${isArchive ? 'archived' : ''}`;
             card.dataset.tournamentId = tournament.id;
             
-            // ИСПРАВЛЕНИЕ ЗДЕСЬ: `t.date` заменено на `tournament.date`
             const displayDate = tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана';
 
             card.innerHTML = `
@@ -1156,7 +1153,7 @@ async function showTournamentDetails(tournamentId) {
                 let activeContentId = `tournament-${tabId}`;
                 if (tabId === 'tab-management') activeContentId = 'tournament-tab-management';
                 if (tabId === 'participants') activeContentId = 'tournament-participants';
-                if (tabId === 'bracket') activeContentId = 'tournament-bracket'; // Ensure bracket section is handled
+                if (tabId === 'bracket') activeContentId = 'tournament-bracket'; 
 
                 allContent.forEach(el => el.classList.remove('active'));
                 allTabs.forEach(el => el.classList.remove('active'));
@@ -1330,7 +1327,10 @@ function initRegistration() {
             alert('Регистрация отправлена! Ваш напарник получит уведомление.');
             registrationForm.classList.add('form-hidden');
             registrationForm.reset();
-            loadRegistrations(currentTournamentId, true);
+            
+            const isCurrentUserCreator = tournamentInfo ? (tournamentInfo.creator_id === userData.telegramUsername) : false;
+            loadRegistrations(currentTournamentId, isCurrentUserCreator);
+
         } catch (error) {
             alert('Ошибка: ' + error.message);
         } finally {
