@@ -1272,7 +1272,7 @@ function initRegistration() {
     
     registerBtn.onclick = () => registrationForm.classList.toggle('form-hidden');
 
-// НАЙДИТЕ ЭТОТ БЛОК
+// ВСТАВЬТЕ ЭТОТ ИСПРАВЛЕННЫЙ БЛОК
 registrationForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitRegistrationBtn = document.getElementById('submit-registration-btn');
@@ -1331,7 +1331,12 @@ registrationForm.addEventListener('submit', async (e) => {
         alert('Регистрация отправлена! Ваш напарник получит уведомление.');
         registrationForm.classList.add('form-hidden');
         registrationForm.reset();
-        loadRegistrations(currentTournamentId, true); // <-- ОШИБКА ЗДЕСЬ
+        
+        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // Проверяем, является ли текущий пользователь создателем, и передаем ПРАВИЛЬНОЕ значение
+        const isCurrentUserCreator = tournamentInfo ? (tournamentInfo.creator_id === userData.telegramUsername) : false;
+        loadRegistrations(currentTournamentId, isCurrentUserCreator);
+
     } catch (error) {
         alert('Ошибка: ' + error.message);
     } finally {
