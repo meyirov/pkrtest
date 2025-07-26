@@ -721,7 +721,7 @@ async function loadNewComments(postId) {
       }
     }
   } catch (error) {
-    console.error('Error loading new comments:', error);
+    console.error('Error loading new posts:', error);
   }
 }
 
@@ -1673,7 +1673,6 @@ async function generateNextRound() {
         });
     });
     
-    // FIX: Deep copy teams from Round 1 to prevent modifying original data.
     const allTeamsFromBracket = JSON.parse(JSON.stringify(bracket.matches[0].matches.flatMap(m => m.teams)));
 
     let teamsByPoints = {};
@@ -1788,7 +1787,7 @@ async function openResultsModal(roundIndex, matchIndex, isPlayoff = false, leagu
         match.teams.forEach(team => {
             modalHtml += `
                 <div class="bpf-rank-selector">
-                    <label for="rank-for-${team.faction_name.replace(/\s+/g, '-')}">${team.faction_name}</label>
+                    <label for="rank-for-${team.faction_name.replace(/\s+/g, '-')})}">${team.faction_name}</label>
                     <select id="rank-for-${team.faction_name.replace(/\s+/g, '-')}" data-faction-name="${team.faction_name}">
                         <option value="0" ${!team.rank || team.rank === 0 ? 'selected' : ''}>-</option>
                         <option value="1" ${team.rank === 1 ? 'selected' : ''}>1 место</option>
@@ -2190,7 +2189,20 @@ async function loadBracket(tournamentId, isCreator) {
 
 
 function showPlayoffSetupForm() {
+    // Get all the necessary elements
+    const qualifyingTabBtn = document.getElementById('qualifying-bracket-tab');
+    const playoffTabBtn = document.getElementById('playoff-bracket-tab');
+    const qualifyingContent = document.getElementById('bracket-qualifying-content');
+    const playoffContent = document.getElementById('bracket-playoff-content');
     const form = document.getElementById('playoff-setup-form');
+
+    // 1. Switch the active tabs and content panes
+    qualifyingTabBtn.classList.remove('active');
+    playoffTabBtn.classList.add('active');
+    qualifyingContent.classList.remove('active');
+    playoffContent.classList.add('active');
+
+    // 2. Un-hide and populate the form
     form.classList.remove('form-hidden');
     form.innerHTML = `
         <h4>Настройки Плей-офф</h4>
