@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKR - Дебаты</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+      const SUPABASE_URL = 'https://dwkbptqrblyiqymnqjiv.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3a2JwdHFyYmx5aXF5bW5xaml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzA3NTcsImV4cCI6MjA1OTAwNjc1N30.QIHms9_kllO7SMxxUlu2U_ugICz1q_cr2-fO61092N4';
+    </script>
+</head>
+<body>
+    <div id="registration-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Добро пожаловать!</h2>
+            <p>Пожалуйста, введите ваше имя для регистрации:</p>
+            <input id="reg-fullname" type="text" placeholder="Имя и фамилия">
+            <button id="submit-profile-reg-btn">Зарегистрироваться</button>
+        </div>
+    </div>
 
+    <div id="app-container" class="container" style="display: none;">
+        <div class="main-content">
+            <section id="feed" class="content active">
+                <div id="new-post">
+                    <textarea id="post-text" placeholder="Что нового?"></textarea>
+                    <div class="new-post-actions">
+                        <div class="new-post-icons">
+                            <label for="post-image" class="image-upload-label">
+                                <span>📷</span> Добавить фото
+                            </label>
+                            <input id="post-image" type="file" accept="image/*" style="display: none;">
+                        </div>
+                        <button id="submit-post">Твитнуть</button>
+                    </div>
+                </div>
+                <div id="posts-loading" style="display: none; text-align: center; padding: 10px;">Загрузка...</div>
+                <div id="posts"></div>
+            </section>
+            
+            <section id="tournaments" class="content">
+                <button id="create-tournament-btn">Создать турнир</button>
+                <form id="create-tournament-form" class="form-hidden">
+                    <input id="tournament-name" type="text" placeholder="Название турнира" required>
+                    <input id="tournament-date" type="text" placeholder="Дата (в формате ДД.ММ.ГГГГ)" required>
+                    <select id="tournament-city" required>
+                        <option value="" disabled selected>Выберите город</option>
+                        <option value="Алматы">Алматы</option>
+                        <option value="Астана">Астана</option>
+                        <option value="Ақтау">Ақтау</option>
+                        <option value="Другой">Другой</option>
+                    </select>
+                    <select id="tournament-scale" required>
+                        <option value="" disabled selected>Выберите масштаб</option>
+                        <option value="Городской">Городской</option>
+                        <option value="Республиканский">Республиканский</option>
+                    </select>
+                    <label for="tournament-logo-upload" class="logo-upload-label">
+    <span>🖼️</span> Загрузить логотип
+</label>
+<span id="logo-file-name" class="file-name-display">Файл не выбран</span>
+<input id="tournament-logo-upload" type="file" accept="image/*" style="display: none;">
+                    <textarea id="tournament-desc" placeholder="Описание турнира"></textarea>
+                    <input id="tournament-address" type="text" placeholder="Ссылка на 2GIS">
+                    <input id="tournament-deadline" type="text" placeholder="Дедлайн (например, 05.04.2025)">
+                    <button id="submit-tournament" type="submit">Создать</button>
+                </form>
+
+                <div class="tournaments-view-controls">
+                    <div class="tournaments-tabs">
+                        <button id="active-tournaments-tab" class="view-tab-btn active">Активные</button>
+                        <button id="archive-tournaments-tab" class="view-tab-btn">Архив</button>
+                    </div>
+                    <div id="tournament-filters">
+                        <select id="filter-city">
+                            <option value="all">Все города</option>
+                            <option value="Алматы">Алматы</option>
+                            <option value="Астана">Астана</option>
+                            <option value="Шымкент">Шымкент</option>
+                            <option value="Другой">Другой</option>
+                        </select>
+                        <select id="filter-scale">
+                            <option value="all">Все масштабы</option>
+                            <option value="Городской">Городской</option>
+                            <option value="Республиканский">Республиканский</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="tournament-list"></div>
+            </section>
+            
+            <section id="tournament-details" class="content">
+                <div id="tournament-header"></div>
+                <div id="tournament-description" class="description-hidden"></div>
+                <button id="toggle-description-btn">Развернуть описание</button>
+                <hr class="section-divider">
+                <div id="tournament-future-content">
+                    <div id="tournament-nav-tabs" class="tournament-tabs">
+                        <button id="posts-tab" class="tab-btn active">Посты</button>
+                        </div>
+                    
+                    <div id="tournament-posts" class="tab-content active"></div>
+                    
+                    <div id="tournament-registration" class="tab-content">
+                        <button id="register-tournament-btn">Зарегистрироваться</button>
+                        <form id="registration-form" class="form-hidden">
+                            <input id="reg-faction-name" type="text" placeholder="Название Фракции" required>
+                            <input id="reg-username1" type="text" placeholder="Username 1-го спикера (без @)" required>
+                            <input id="reg-username2" type="text" placeholder="Username 2-го спикера (без @)" required>
+                            <input id="reg-club" type="text" placeholder="Клуб" required>
+                            <input id="reg-city" type="text" placeholder="Город">
+                            <input id="reg-contacts" type="text" placeholder="Контакты">
+                            <textarea id="reg-extra" placeholder="Дополнительно (достижения)"></textarea>
+                            <button id="submit-registration-btn" type="submit">Отправить</button>
+                        </form>
+                        <div id="registration-list"></div>
+                    </div>
+
+                    <div id="tournament-tab-management" class="tab-content">
+                        <div class="tab-stats" id="tab-stats"></div>
+                        <button id="publish-tab-btn" class="publish-btn"></button>
+                        <h3>Основной состав</h3>
+                        <div id="tab-main-list"></div>
+                        <hr class="section-divider">
+                        <h3>Резерв</h3>
+                        <div id="tab-reserve-list"></div>
+                    </div>
+                    
+                    <div id="tournament-participants" class="tab-content">
+                        <h3>Основной состав</h3>
+                        <div id="participants-main-list"></div>
+                        <hr class="section-divider">
+                        <h3>Резерв</h3>
+                        <div id="participants-reserve-list"></div>
+                    </div>
+
+                    <section id="tournament-bracket" class="tab-content">
+                        <div class="bracket-sub-nav">
+                            <button id="qualifying-bracket-tab" class="bracket-sub-nav-btn active">Отборочные</button>
+                            <button id="playoff-bracket-tab" class="bracket-sub-nav-btn">Play Off</button>
+                        </div>
+        
+                        <div id="bracket-qualifying-content" class="bracket-content-pane active">
+                            <div id="bracket-form">
+                                <h4>Управление сеткой отборочных раундов</h4>
+                                <select id="bracket-format">
+                                  <option value="АПФ">АПФ</option>
+                                  <option value="БПФ">БПФ</option>
+                                </select>
+                                <input id="bracket-faction-count" type="number" placeholder="Количество фракций" required>
+                                <input id="bracket-round-count" type="number" placeholder="Количество раундов" required>
+                                <button id="generate-bracket-btn">Сгенерировать 1-й раунд</button>
+                            </div>
+                            <div id="bracket-display"></div>
+                        </div>
+        
+                        <div id="bracket-playoff-content" class="bracket-content-pane">
+                            <form id="playoff-setup-form" class="form-hidden"></form>
+                            <div id="playoff-display"></div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+            <section id="rating" class="content">
+                <div id="rating-city-view">
+                    <div class="rating-header">
+                        <h2>Выберите город</h2>
+                    </div>
+                    <div id="rating-city-list"></div>
+                </div>
+
+                <div id="rating-season-view" class="selector-hidden">
+                    <div class="rating-header">
+                        <button id="rating-back-to-cities" class="rating-back-btn">←</button>
+                        <h2 id="rating-season-title">Выберите сезон</h2>
+                    </div>
+                    <div id="rating-season-list"></div>
+                </div>
+
+                <div id="rating-table-view" class="selector-hidden">
+                    <div class="rating-header">
+                        <button id="rating-back-to-seasons" class="rating-back-btn">←</button>
+                        <h2 id="rating-table-title">Рейтинг игроков</h2>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Место</th>
+                                    <th>Имя</th>
+                                    <th>Очки</th>
+                                    <th>Клуб</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rating-list-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section id="profile" class="content">
+                <h2>Профиль</h2>
+                <p>Username: <span id="username"></span></p>
+                <input id="fullname" type="text" placeholder="Имя и фамилия">
+                <button id="update-profile">Изменить имя</button>
+            </section>
+            <section id="edu" class="content">
+                <h2>PKR EDU</h2>
+                <p>Обучающий контент скоро появится!</p>
+            </section>
+        </div>
+        <nav class="navbar">
+            <button id="feed-btn" class="nav-btn active"><span>🏠</span> Лента</button>
+            <button id="tournaments-btn" class="nav-btn"><span>🏆</span> Турниры</button>
+            <button id="rating-btn" class="nav-btn"><span>⭐</span> Рейтинг</button>
+            <button id="profile-btn" class="nav-btn"><span>👤</span> Профиль</button>
+            <button id="edu-btn" class="nav-btn"><span>📚</span> EDU</button>
+        </nav>
+    </div>
+
+    <div id="results-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="results-modal-title">Ввод результатов матча</h3>
+            <div id="results-modal-body">
+                </div>
+            <div class="modal-actions">
+                <button id="save-results-btn">Сохранить</button>
+                <button id="cancel-results-btn">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
